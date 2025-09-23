@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("AUTH_DATABASE_URL")
+}
+
+// Enum para roles de usuario
+enum RolUsuario {
+  ADMIN
+  TECNICO
+  CLIENTE
+}
+
+// Modelo Usuario
+model Usuario {
+  idUser          Int      @id @default(autoincrement())
+  cedula          String   @unique
+  nombres         String
+  apellidos       String
+  email           String   @unique
+  password        String   // Campo original (mantenemos por compatibilidad)
+  passwordHash    String?  // Campo para hash de password
+  telefono        String?
+  direccion       String?
+  fechaNacimiento DateTime?
+  rol             RolUsuario @default(CLIENTE)
+  emailVerificado Boolean  @default(false)
+  activo          Boolean  @default(true)
+  isActive        Boolean  @default(true)  // Campo adicional esperado por servicios
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  sesiones        SesionUsuario[]
+
+  @@map("usuarios")
+}
+
+// Modelo para sesiones de usuario
+model SesionUsuario {
+  idSesion         Int      @id @default(autoincrement())
+  idUser           Int
+  token            String   @unique
+  accessToken      String?  @unique  // Campo esperado por servicios
+  refreshToken     String?  @unique
+  fechaCreacion    DateTime @default(now())
+  fechaExpiracion  DateTime
+  expiresAt        DateTime? // Campo adicional esperado
+  refreshExpiresAt DateTime? // Campo adicional esperado
+  activa           Boolean  @default(true)
+  isActive         Boolean  @default(true) // Campo adicional esperado
+  ipAddress        String?
+  userAgent        String?
+
+  // Relaciones
+  usuario          Usuario  @relation(fields: [idUser], references: [idUser], onDelete: Cascade)
+
+  @@map("sesiones_usuarios")
+}

@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("REQUEST_DATABASE_URL")
+}
+
+// Enums para el microservicio request
+enum EstadoSolicitud {
+  PENDIENTE
+  ACEPTADA
+  CANCELADA
+  COMPLETADA
+}
+
+enum EstadoAceptacion {
+  PROPUESTO
+  ACEPTADO
+  RECHAZADO
+}
+
+enum PuntajeCalificacion {
+  EXCELENTE
+  BUENO
+  REGULAR
+  MALO
+  TERRIBLE
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  OTRO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  FALLIDO
+}
+
+// Modelo Solicitud (principal del microservicio)
+model Solicitud {
+  idSolicitud         Int             @id @default(autoincrement())
+  idUser              Int // Referencia a user del microservicio Auth
+  idTipoServicio      Int // Referencia a tipo servicio del microservicio Technician
+  codigoParroquia     String // Referencia a parroquia del microservicio Geo
+  tituloProblema      String          @db.VarChar(100)
+  descripcionProblema String          @db.Text
+  costoEstimado       Decimal?        @db.Decimal(10, 2)
+  costoPromocion      Decimal?        @db.Decimal(10, 2)
+  promocion           Boolean         @default(false)
+  estadoSolicitud     EstadoSolicitud
+  fechaProgramada     DateTime?
+  fechaPublicacion    DateTime        @default(now())
+  fechaInicio         DateTime?
+  fechaFinalizacion   DateTime?
+  duracionEstimadaMin Int? // Duración estimada en minutos
+  isActive            Boolean         @default(true)
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  createdBy           Int?
+  updatedBy           Int?
+
+  // Relaciones
+  solicitudesTecnico SolicitudTecnico[]
+  calificaciones     Calificacion[]
+  transacciones      Transaccion[]
+
+  @@map("solicitudes")
+}
+
+// Modelo SolicitudTecnico
+model SolicitudTecnico {
+  idSolTec        Int              @id @default(autoincrement())
+  idSolicitud     Int
+  idTecnico       Int // Referencia a tecnico del microservicio Technician
+  costoAcordado   Decimal?         @db.Decimal(10, 2)
+  estadoAcuerdo   EstadoAceptacion
+  fechaPropuesta  DateTime         @default(now())
+  fechaConfirmada DateTime?
+  notas           String?          @db.Text
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relaciones
+  solicitud Solicitud @relation(fields: [idSolicitud], references: [idSolicitud])
+
+  @@unique([idSolicitud, idTecnico])
+  @@map("solicitudes_tecnicos")
+}
+
+// Modelo Calificacion
+model Calificacion {
+  idCalificacion    Int                 @id @default(autoincrement())
+  idSolicitud       Int
+  idTecnico         Int // Referencia a tecnico del microservicio Technician
+  puntaje           PuntajeCalificacion
+  comentario        String?             @db.Text
+  fechaCalificacion DateTime            @default(now())
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relaciones
+  solicitud Solicitud @relation(fields: [idSolicitud], references: [idSolicitud])
+
+  @@map("calificaciones")
+}
+
+// Modelo Transaccion
+model Transaccion {
+  idTransaccion Int        @id @default(autoincrement())
+  idSolicitud   Int
+  monto         Decimal    @db.Decimal(10, 2)
+  metodoPago    MetodoPago
+  estadoPago    EstadoPago @default(PENDIENTE)
+  fechaPago     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relaciones
+  solicitud Solicitud @relation(fields: [idSolicitud], references: [idSolicitud])
+
+  @@map("transacciones")
+}

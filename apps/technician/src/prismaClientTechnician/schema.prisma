@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("TECHNICIAN_DATABASE_URL")
+}
+
+// Enums para el microservicio technician
+enum RolUsuario {
+  ADMIN
+  TECNICO
+  CLIENTE
+}
+
+enum EstatusCertificacion {
+  PENDIENTE
+  VERIFICADA
+  RECHAZADA
+  VENCIDA
+}
+
+enum SubServicio {
+  INSTALACION
+  REPARACION
+  MANTENIMIENTO
+  DESINSTALACION
+  REVISION
+  OTRO
+}
+
+enum PuntajeCalificacion {
+  EXCELENTE
+  BUENO
+  REGULAR
+  MALO
+  TERRIBLE
+}
+
+// Modelo Técnico (principal del microservicio)
+model Tecnico {
+  idTecnico              Int      @id @default(autoincrement())
+  idUser                 Int      @unique  // Referencia a user del microservicio Auth
+  totalCalificaciones    Int      @default(0)
+  promedioCalificaciones Decimal? @db.Decimal(3, 2)
+  isActive               Boolean  @default(true)
+  deletedAt              DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  createdBy              Int?
+  updatedBy              Int?
+
+  // Relaciones
+  certificaciones       TecnicoCertificacion[]
+  parroquias            TecnicoParroquia[]
+  servicios             TecnicoServicio[]
+  solicitudesTecnico    SolicitudTecnico[]
+  calificaciones        Calificacion[]
+
+  @@map("tecnicos")
+}
+
+// Modelo Certificación
+model Certificacion {
+  idCertificacion         Int      @id @default(autoincrement())
+  nombreCertificacion     String   @db.VarChar(100)
+  entidadCertificacion    String   @db.VarChar(100)
+  descripcionCertificacion String? @db.Text
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relaciones
+  tecnicosCertificaciones TecnicoCertificacion[]
+
+  @@map("certificaciones")
+}
+
+// Modelo TécnicoCertificación
+model TecnicoCertificacion {
+  idTecCert              Int                   @id @default(autoincrement())
+  idTecnico              Int
+  idCertificacion        Int
+  fechaObtencion         DateTime
+  fechaVencimiento       DateTime
+  documento              Json?
+  estatusCertificacion   EstatusCertificacion
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  // Relaciones
+  tecnico       Tecnico       @relation(fields: [idTecnico], references: [idTecnico])
+  certificacion Certificacion @relation(fields: [idCertificacion], references: [idCertificacion])
+
+  @@unique([idTecnico, idCertificacion])
+  @@map("tecnicos_certificaciones")
+}
+
+// Modelo TécnicoParroquia (solo códigos de parroquia)
+model TecnicoParroquia {
+  idTecnico       Int
+  codigoParroquia String  // Referencia al microservicio Geo
+  createdAt       DateTime @default(now())
+
+  // Relaciones
+  tecnico   Tecnico   @relation(fields: [idTecnico], references: [idTecnico])
+
+  @@id([idTecnico, codigoParroquia])
+  @@map("tecnicos_parroquias")
+}
+
+// Modelo TipoServicio
+model TipoServicio {
+  idTipoServicio      Int         @id @default(autoincrement())
+  nombreServicio      String      @db.VarChar(50)
+  descripcionServicio String      @db.Text
+  subServicio         SubServicio
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  // Relaciones
+  tecnicosServicios TecnicoServicio[]
+
+  @@map("tipos_servicios")
+}
+
+// Modelo TécnicoServicio
+model TecnicoServicio {
+  idTecnico       Int
+  idTipoServicio  Int
+  createdAt       DateTime @default(now())
+
+  // Relaciones
+  tecnico      Tecnico      @relation(fields: [idTecnico], references: [idTecnico])
+  tipoServicio TipoServicio @relation(fields: [idTipoServicio], references: [idTipoServicio])
+
+  @@id([idTecnico, idTipoServicio])
+  @@map("tecnicos_servicios")
+}
+
+// Modelo SolicitudTécnico (mínima info, datos completos en Request service)
+model SolicitudTecnico {
+  idSolTec        Int       @id @default(autoincrement())
+  idSolicitud     Int       // Referencia al microservicio Request
+  idTecnico       Int
+  costoAcordado   Decimal?  @db.Decimal(10, 2)
+  estadoAcuerdo   String    // Para evitar enum dependencia con request service
+  fechaPropuesta  DateTime  @default(now())
+  fechaConfirmada DateTime?
+  notas           String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relaciones
+  tecnico   Tecnico   @relation(fields: [idTecnico], references: [idTecnico])
+
+  @@unique([idSolicitud, idTecnico])
+  @@map("solicitudes_tecnicos")
+}
+
+// Modelo Calificación
+model Calificacion {
+  idCalificacion     Int                 @id @default(autoincrement())
+  idSolicitud        Int                 // Referencia al microservicio Request
+  idTecnico          Int
+  puntaje            PuntajeCalificacion
+  comentario         String?             @db.Text
+  fechaCalificacion  DateTime            @default(now())
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  // Relaciones
+  tecnico   Tecnico   @relation(fields: [idTecnico], references: [idTecnico])
+
+  @@map("calificaciones")
+}

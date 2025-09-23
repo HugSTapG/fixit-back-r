@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  output   = "./generated"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("GEO_DATABASE_URL")
+  extensions = [postgis]
+}
+
+// Provincias (Ecuador)
+model Provincia {
+  codigoProvincia  String   @id
+  nombreProvincia  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relaciones
+  cantones Canton[]
+
+  @@map("provincias")
+}
+
+// Cantones
+model Canton {
+  codigoCanton     String @id
+  codigoProvincia  String
+  nombreCanton     String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relaciones
+  provincia  Provincia   @relation(fields: [codigoProvincia], references: [codigoProvincia])
+  parroquias Parroquia[]
+
+  @@map("cantones")
+}
+
+// Parroquias
+model Parroquia {
+  codigoParroquia String @id
+  codigoCanton    String
+  nombreParroquia String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  canton      Canton      @relation(fields: [codigoCanton], references: [codigoCanton])
+  ubicaciones Ubicacion[]
+
+  @@map("parroquias")
+}
+
+// Ubicaciones con datos geoespaciales
+model Ubicacion {
+  idUbicacion            Int    @id @default(autoincrement())
+  codigoParroquia        String
+  nombreUbicacion        String
+  descripcionUbicacion   String
+  ubicacion              Unsupported("geometry(Point, 4326)")?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relaciones
+  parroquia Parroquia @relation(fields: [codigoParroquia], references: [codigoParroquia])
+
+  @@map("ubicaciones")
+}
