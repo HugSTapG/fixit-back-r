@@ -67,6 +67,17 @@ import { PaymentProxyService } from './services/payment-proxy.service';
                 }),
                 inject: [ConfigService],
             },
+            {
+                name: 'NOTIFICATION_SERVICE',
+                useFactory: (configService: ConfigService) => ({
+                    transport: Transport.TCP,
+                    options: {
+                        host: 'localhost',
+                        port: configService.get('NOTIFICATION_SERVICE_PORT', 3307),
+                    },
+                }),
+                inject: [ConfigService],
+            },
         ]),
     ],
     providers: [

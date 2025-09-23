@@ -12,6 +12,7 @@ export class MicroserviceProxyService {
         @Inject('TECHNICIAN_SERVICE') protected technicianClient: ClientProxy,
         @Inject('REQUEST_SERVICE') protected requestClient: ClientProxy,
         @Inject('PAYMENT_SERVICE') protected paymentClient: ClientProxy,
+        @Inject('NOTIFICATION_SERVICE') protected notificationClient: ClientProxy,
     ) { }
 
     protected sendToService(
@@ -53,5 +54,9 @@ export class MicroserviceProxyService {
 
     sendToPayment(pattern: string, data: any): Observable<any> {
         return this.sendToService(this.paymentClient, pattern, data);
+    }
+
+    sendToNotification(pattern: string, data: any): Observable<any> {
+        return this.sendToService(this.notificationClient, pattern, data);
     }
 }

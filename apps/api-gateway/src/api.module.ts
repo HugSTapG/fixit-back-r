@@ -23,7 +23,8 @@ import { HealthController } from './health/health.controller';
 import { UsuariosController } from './controllers/usuarios.controller';
 import { TechnicianController } from './controllers/technician.controller';
 import { RequestController } from './controllers/request.controller';
-import { PaymentController } from './controllers/payment.controller'; // AGREGADO
+import { PaymentController } from './controllers/payment.controller';
+import { NotificationController } from './controllers/notification.controller';
 
 // Middleware
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware';
@@ -106,12 +107,23 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
         inject: [ConfigService],
       },
       {
-        name: 'PAYMENT_SERVICE', // AGREGADO
+        name: 'PAYMENT_SERVICE',
         useFactory: (configService: ConfigService) => ({
           transport: Transport.TCP,
           options: {
             host: 'localhost',
             port: configService.get('PAYMENT_SERVICE_PORT', 3306),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'NOTIFICATION_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('NOTIFICATION_SERVICE_PORT', 3307),
           },
         }),
         inject: [ConfigService],
@@ -130,11 +142,14 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
     // Technician controller
     TechnicianController,
 
-    // Request controller (unificado)
+    // Request controller
     RequestController,
 
-    // Payment controller - AGREGADO
+    // Payment controller
     PaymentController,
+
+    // Notification controller
+    NotificationController,
 
     // Health controller
     HealthController,

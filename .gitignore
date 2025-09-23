@@ -63,6 +63,9 @@ apps/geo/src/prismaClientGeo/generated/
 apps/technician/src/prismaClientTechnician/generated/
 /apps/technician/src/prismaClientTechnician/migrations/**/steps.json
 
+# --- Prisma generated files (any depth) ---
+apps/**/src/prismaClient*/generated/
+
 # --- Docker ---
 docker/*.log
 docker/data/

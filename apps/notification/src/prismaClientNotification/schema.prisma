@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("NOTIFICATION_DATABASE_URL")
+}
+
+// Enums
+enum TipoNotificacion {
+  SOLICITUD_NUEVA
+  SOLICITUD_ACEPTADA
+  SOLICITUD_COMPLETADA
+  CALIFICACION_RECIBIDA
+  RECORDATORIO
+
+  @@map("tipo_notificacion")
+}
+
+// Modelo principal del microservicio Notification
+model Notificacion {
+  idNotificacion    Int               @id @default(autoincrement())
+  idUser            Int               // Referencia externa - sin foreign key constraint
+  titulo            String            @db.VarChar(100)
+  mensaje           String            @db.VarChar(255)
+  estadoLectura     Boolean           @default(false)
+  tipoNotificacion  TipoNotificacion
+  fechaEnvio        DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@map("notificaciones")
+}
+
+model TokenNotificacion {
+  idTokenNotificacion Int      @id @default(autoincrement())
+  idUser              Int      // Referencia externa - sin foreign key constraint
+  tokenDispositivo    String   @db.VarChar(255)
+  plataforma          String   @db.VarChar(50)
+  estadoDispositivo   Boolean  @default(true)
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([idUser, tokenDispositivo])
+  @@map("tokens_notificaciones")
+}

@@ -31,6 +31,7 @@
     "start:technician-stack": "concurrently \"npm run start:dev:gateway\" \"npm run start:dev:technician\"",
     "start:request-stack": "concurrently \"npm run start:dev:gateway\" \"npm run start:dev:request\"",
     "start:payment-stack": "concurrently \"npm run start:dev:gateway\" \"npm run start:dev:payment\"",
+    "start:notification-stack": "concurrently \"npm run start:dev:gateway\" \"npm run start:dev:notification\"",
     "start:all": "concurrently \"npm run start:dev:gateway\" \"npm run start:dev:auth\" \"npm run start:dev:geo\" \"npm run start:dev:technician\" \"npm run start:dev:request\" \"npm run start:dev:payment\" \"npm run start:dev:notification\"",
     "infra:start": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-infra.ps1",
     "infra:start:services": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-services.ps1",
@@ -46,6 +47,7 @@
     "dev:request": "npm run infra:start && npm run start:dev:request",
     "dev:payment": "npm run infra:start && npm run start:dev:payment",
     "dev:notification": "npm run infra:start && npm run start:dev:notification",
+    "dev:all": "npm run infra:start && npm run start:all",
     "prisma:generate:auth": "cd apps/auth && npx prisma generate --schema=src/prismaClientAuth/schema.prisma",
     "prisma:migrate:auth": "cd apps/auth && npx prisma migrate dev --schema=src/prismaClientAuth/schema.prisma",
     "prisma:migrate:auth:reset": "cd apps/auth && npx prisma migrate reset --schema=src/prismaClientAuth/schema.prisma",
@@ -81,7 +83,10 @@
     "test:e2e": "jest --config ./apps/fixit-back-r/test/jest-e2e.json",
     "test:payment": "jest --testPathPattern=apps/payment",
     "test:payment:watch": "jest --testPathPattern=apps/payment --watch",
-    "test:payment:cov": "jest --testPathPattern=apps/payment --coverage"
+    "test:payment:cov": "jest --testPathPattern=apps/payment --coverage",
+    "test:notification": "jest --testPathPattern=apps/notification",
+    "test:notification:watch": "jest --testPathPattern=apps/notification --watch",
+    "test:notification:cov": "jest --testPathPattern=apps/notification --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -160,8 +165,8 @@
       "<rootDir>/apps/"
     ],
     "moduleNameMapping": {
-      "^@fixit/events(|/.*)$": "<rootDir>/libs/events/src/$1",
-      "^@fixit/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
+      "@app/events": "<rootDir>/libs/events/src",
+      "@app/shared": "<rootDir>/libs/shared/src"
     }
   }
 }
