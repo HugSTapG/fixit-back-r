@@ -1,0 +1,105 @@
+### ===================== SOLICITUDES =====================
+
+### LISTAR SOLICITUDES (PÚBLICO)
+GET http://localhost:3300/api/v1/request/solicitudes
+
+### OBTENER SOLICITUD POR ID (PROTEGIDO)
+GET http://localhost:3300/api/v1/request/solicitudes/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ESTADÍSTICAS GENERALES DE SOLICITUDES (ADMIN)
+GET http://localhost:3300/api/v1/request/solicitudes/stats/general
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ESTADÍSTICAS DE SOLICITUDES DEL USUARIO ACTUAL (PROTEGIDO)
+GET http://localhost:3300/api/v1/request/solicitudes/stats/my-stats
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### MIS SOLICITUDES (PROTEGIDO)
+GET http://localhost:3300/api/v1/request/solicitudes/my/solicitudes
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### CREAR SOLICITUD (ADMIN o CLIENTE)
+POST http://localhost:3300/api/v1/request/solicitudes
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "idTipoServicio": 1,
+    "descripcion": "Reparación de equipo",
+    "codigoParroquia": "250101",
+    "fechaSolicitud": "2025-10-01"
+}
+
+### ACTUALIZAR SOLICITUD (PROTEGIDO)
+PUT http://localhost:3300/api/v1/request/solicitudes/1
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "descripcion": "Actualización de la solicitud"
+}
+
+### CANCELAR SOLICITUD (PROTEGIDO)
+PUT http://localhost:3300/api/v1/request/solicitudes/1/cancel
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ELIMINAR SOLICITUD (ADMIN)
+DELETE http://localhost:3300/api/v1/request/solicitudes/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+
+### ===================== SOLICITUDES-TECNICOS =====================
+
+### LISTAR TODAS LAS PROPUESTAS (ADMIN)
+GET http://localhost:3300/api/v1/request/solicitudes-tecnicos
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER PROPUESTA POR ID (PROTEGIDO)
+GET http://localhost:3300/api/v1/request/solicitudes-tecnicos/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER PROPUESTAS POR SOLICITUD (PROTEGIDO)
+GET http://localhost:3300/api/v1/request/solicitudes-tecnicos/solicitud/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### MIS PROPUESTAS COMO TÉCNICO (TECNOICO)
+GET http://localhost:3300/api/v1/request/solicitudes-tecnicos/my/propuestas
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ESTADÍSTICAS DEL TÉCNICO ACTUAL (TECNOICO)
+GET http://localhost:3300/api/v1/request/solicitudes-tecnicos/my/stats
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### POSTULARSE A UNA SOLICITUD (TÉCNICO)
+POST http://localhost:3300/api/v1/request/solicitudes-tecnicos/postularse
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "idSolicitud": 1,
+    "mensaje": "Estoy disponible para este trabajo"
+}
+
+### RESPONDER PROPUESTA (CLIENTE o ADMIN)
+PUT http://localhost:3300/api/v1/request/solicitudes-tecnicos/1/responder
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "aceptada": true,
+    "comentario": "Se acepta su propuesta"
+}
+
+### ACTUALIZAR PROPUESTA (TÉCNICO)
+PUT http://localhost:3300/api/v1/request/solicitudes-tecnicos/1
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "mensaje": "Actualización de mi propuesta"
+}
+
+### CANCELAR PROPUESTA (TÉCNICO)
+DELETE http://localhost:3300/api/v1/request/solicitudes-tecnicos/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN

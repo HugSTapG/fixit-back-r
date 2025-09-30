@@ -8,6 +8,7 @@ import { GeoProxyService } from './services/geo-proxy.service';
 import { TechnicianProxyService } from './services/technician-proxy.service';
 import { RequestProxyService } from './services/request-proxy.service';
 import { PaymentProxyService } from './services/payment-proxy.service';
+import { NotificationProxyService } from './services/notification-proxy.service';
 
 @Module({
     imports: [
@@ -87,6 +88,7 @@ import { PaymentProxyService } from './services/payment-proxy.service';
         TechnicianProxyService,
         RequestProxyService,
         PaymentProxyService,
+        NotificationProxyService,
     ],
     exports: [
         MicroserviceProxyService,
@@ -95,6 +97,7 @@ import { PaymentProxyService } from './services/payment-proxy.service';
         TechnicianProxyService,
         RequestProxyService,
         PaymentProxyService,
+        NotificationProxyService,
     ],
 })
 export class ProxyModule { }
