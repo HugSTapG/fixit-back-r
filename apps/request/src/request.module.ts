@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { DatabaseModule } from './database/database.module';
 import { SolicitudesController } from './controllers/solicitudes.controller';
 import { SolicitudesTecnicosController } from './controllers/solicitudes-tecnicos.controller';
@@ -13,6 +14,42 @@ import { HealthController } from './health/health.controller';
       isGlobal: true,
     }),
     DatabaseModule,
+    // Clientes para comunicarse con otros microservicios
+    ClientsModule.registerAsync([
+      {
+        name: 'AUTH_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('AUTH_SERVICE_PORT', 3301),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'REQUEST_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('REQUEST_SERVICE_PORT', 3305),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'TECHNICIAN_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('TECHNICIAN_SERVICE_PORT', 3304),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [
     SolicitudesController,

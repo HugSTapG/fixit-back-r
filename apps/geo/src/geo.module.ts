@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TerminusModule } from '@nestjs/terminus';
 
 // Shared libraries
@@ -31,7 +32,7 @@ import { UbicacionesService } from './services/ubicaciones.service';
     // Database
     DatabaseModule,
 
-    // Shared libraries
+  // Shared libraries
     SharedModule,
     EventsModule,
     KafkaModule,
@@ -39,6 +40,42 @@ import { UbicacionesService } from './services/ubicaciones.service';
 
     // Health checks
     TerminusModule,
+    // Microservice clients
+    ClientsModule.registerAsync([
+      {
+        name: 'AUTH_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('AUTH_SERVICE_PORT', 3301),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'REQUEST_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('REQUEST_SERVICE_PORT', 3305),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'TECHNICIAN_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('TECHNICIAN_SERVICE_PORT', 3304),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
 
   controllers: [

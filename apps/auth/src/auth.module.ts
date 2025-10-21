@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TerminusModule } from '@nestjs/terminus';
@@ -54,6 +55,42 @@ import { RolesGuard } from './guards/roles.guard';
 
     // Health checks
     TerminusModule,
+    // Microservice clients
+    ClientsModule.registerAsync([
+      {
+        name: 'AUTH_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('AUTH_SERVICE_PORT', 3301),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'REQUEST_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('REQUEST_SERVICE_PORT', 3305),
+          },
+        }),
+        inject: [ConfigService],
+      },
+      {
+        name: 'TECHNICIAN_SERVICE',
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: 'localhost',
+            port: configService.get('TECHNICIAN_SERVICE_PORT', 3304),
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
 
   controllers: [
