@@ -6,6 +6,7 @@ import { KafkaService } from '@app/events';
 import { UsuariosService } from './usuarios.service';
 import { LoginDto, RefreshTokenDto, AuthResponseDto } from '../dto';
 import { SesionMapper } from '../mappers';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuthService {
@@ -17,8 +18,22 @@ export class AuthService {
         private readonly configService: ConfigService,
         private readonly kafkaService: KafkaService,
         private readonly usuariosService: UsuariosService,
-    ) { }
+    ) {}
 
+    /**
+     * 🚀 Publicar eventos Kafka sin bloquear el login
+     */
+   private publishAsync(topic: string, payload: any) {
+    // publishEvent devuelve una Promise, así que la manejamos como tal
+    this.kafkaService.publishEvent(topic, payload)
+        .catch(err => {
+            this.logger.error(`Kafka error on topic "${topic}"`, err);
+        });
+}
+
+    /**
+     * 🔐 LOGIN
+     */
     async login(loginDto: LoginDto): Promise<AuthResponseDto> {
         const user = await this.usuariosService.validatePassword(
             loginDto.email,
@@ -47,26 +62,10 @@ export class AuthService {
             expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
         });
 
-        // Crear sesión en base de datos
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
-        const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+        await this.createSession(user.idUser, accessToken, refreshToken);
 
-        const sesionData = SesionMapper.toPrismaCreateData({
-            idUser: user.idUser,
-            accessToken,
-            refreshToken,
-            expiresAt,
-            refreshExpiresAt,
-            isActive: true,
-            activa: true,
-        });
-
-        await this.database.sesionUsuario.create({
-            data: sesionData,
-        });
-
-        // Emitir evento de login
-        await this.kafkaService.publishEvent('user.logged_in', {
+        // 🚀 Evento asincrónico REAL
+        this.publishAsync('user.logged_in', {
             userId: user.idUser,
             email: user.email,
             rol: user.rol,
@@ -86,6 +85,9 @@ export class AuthService {
         };
     }
 
+    /**
+     * 🔄 REFRESH TOKEN
+     */
     async refresh(refreshTokenDto: RefreshTokenDto): Promise<AuthResponseDto> {
         const payload = this.jwtService.verify(refreshTokenDto.refresh_token, {
             secret: this.configService.get('JWT_REFRESH_SECRET'),
@@ -126,7 +128,6 @@ export class AuthService {
             expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
         });
 
-        // Actualizar sesión
         await this.database.sesionUsuario.update({
             where: { idSesion: session.idSesion },
             data: {
@@ -137,8 +138,8 @@ export class AuthService {
             },
         });
 
-        // Emitir evento
-        await this.kafkaService.publishEvent('token.refreshed', {
+        // 🚀 Evento asincrónico REAL
+        this.publishAsync('token.refreshed', {
             userId: user.idUser,
             newTokenId: newAccessToken,
         });
@@ -157,6 +158,9 @@ export class AuthService {
         };
     }
 
+    /**
+     * 🚪 LOGOUT
+     */
     async logout(accessToken: string): Promise<void> {
         await this.database.sesionUsuario.updateMany({
             where: { accessToken },
@@ -166,13 +170,15 @@ export class AuthService {
             },
         });
 
-        // Emitir evento de logout
-        await this.kafkaService.publishEvent('user.logged_out', {
+        this.publishAsync('user.logged_out', {
             accessToken,
             timestamp: new Date(),
         });
     }
 
+    /**
+     * 🔎 VALIDAR TOKEN
+     */
     async validateToken(token: string): Promise<any> {
         const payload = this.jwtService.verify(token);
 
@@ -198,13 +204,16 @@ export class AuthService {
         };
     }
 
+    /**
+     * 🗂 Crear sesión
+     */
     private async createSession(
         userId: number,
         accessToken: string,
         refreshToken: string,
     ) {
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
-        const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+        const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         const sesionData = SesionMapper.toPrismaCreateData({
             idUser: userId,
@@ -216,8 +225,6 @@ export class AuthService {
             activa: true,
         });
 
-        return this.database.sesionUsuario.create({
-            data: sesionData,
-        });
+        return this.database.sesionUsuario.create({ data: sesionData });
     }
 }
