@@ -80,8 +80,9 @@ export class TechnicianController {
 
     @Get('tecnicos/top-rated')
     @Public()
-    getTopRatedTechnicians(@Query('limit', ParseIntPipe) limit?: number): Observable<any> {
-        return this.technicianProxyService.getTopRatedTechnicians(limit);
+    getTopRatedTechnicians(@Query('limit') limit?: string | number,){
+        const parsedLimit = Number(limit) || 10;
+        return this.technicianProxyService.getTopRatedTechnicians(parsedLimit);
     }
 
     @Get('tecnicos/available-for-request/:idSolicitud')
