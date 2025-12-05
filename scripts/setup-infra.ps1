@@ -3,7 +3,22 @@
 
 Write-Host "Setting up FixIt infrastructure (Kafka, Redis, Postgres DBs)..." -ForegroundColor Green
 
-# Crear red de Docker si no existe
+# Verificar si la red Docker fixit-network existe
+Write-Host "Checking if Docker network fixit-network exists..." -ForegroundColor Yellow
+$networkExists = docker network ls --filter "name=fixit-network" --format '{{.Name}}'
+
+if ($networkExists -eq "fixit-network") {
+    Write-Host "Network fixit-network already exists, removing it..." -ForegroundColor Red
+    docker network rm fixit-network
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Network removed successfully" -ForegroundColor Green
+    } else {
+        Write-Host "Failed to remove existing network" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Crear red de Docker
 Write-Host "Creating Docker network..." -ForegroundColor Yellow
 docker network create fixit-network 2>$null
 if ($LASTEXITCODE -eq 0) {

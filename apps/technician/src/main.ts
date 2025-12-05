@@ -20,7 +20,8 @@ async function bootstrap() {
       },
       whitelist: true,
       forbidNonWhitelisted: true,
-    })
+      skipMissingProperties: true, // ← AGREGAR ESTO
+    }),
   );
 
   // Configurar microservicio TCP
@@ -40,7 +41,9 @@ async function bootstrap() {
   await app.startAllMicroservices();
   await app.listen(httpPort);
 
-  logger.log(`Technician Service TCP running on port ${configService.get('TECHNICIAN_SERVICE_PORT', 3304)}`);
+  logger.log(
+    `Technician Service TCP running on port ${configService.get('TECHNICIAN_SERVICE_PORT', 3304)}`,
+  );
   logger.log(`Technician Service HTTP running on port ${httpPort}`);
 }
 
