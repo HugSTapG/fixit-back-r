@@ -1,19 +1,19 @@
 import { IsOptional, IsNumber, Min, Max } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 
 export class PaginationDto {
     @IsOptional()
-    @Transform(({ value }) => parseInt(value))
+    @Type(() => Number)
     @IsNumber()
     @Min(1)
-    page?: number = 1;
+    page: number = 1;
 
     @IsOptional()
-    @Transform(({ value }) => parseInt(value))
+    @Type(() => Number)
     @IsNumber()
     @Min(1)
     @Max(100)
-    limit?: number = 10;
+    limit: number = 10;
 
     get skip(): number {
         return ((this.page ?? 1) - 1) * (this.limit ?? 10);
