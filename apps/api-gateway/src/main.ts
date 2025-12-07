@@ -41,22 +41,27 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors({
     origin: [
-      configService.get('FRONTEND_URL') || 'http://localhost:8081',
-      'http://localhost:8081'],
-      
+      'http://localhost:3000',
+      'http://localhost:3300',
+      'http://192.168.1.185:3000',
+      'http://192.168.1.185:3300',
+      '*'
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
     credentials: true,
   });
+  
+  logger.log('🔓 CORS enabled for: localhost:3000, localhost:3300, 192.168.1.185:3000, 192.168.1.185:3300, *');
 
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  const port = configService.get<number>('API_GATEWAY_PORT') || 3000;
+  const port = configService.get<number>('API_GATEWAY_PORT') || 3300;
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
-  logger.log(`🚀 FixIt API Gateway running on: http://localhost:${port}/api/v1`);
+  logger.log(`🚀 FixIt API Gateway running on: http://0.0.0.0:${port}/api/v1`);
   logger.log(`📊 Health check: http://localhost:${port}/api/v1/health`);
   logger.log(`🌍 Environment: ${configService.get('NODE_ENV', 'development')}`);
 }

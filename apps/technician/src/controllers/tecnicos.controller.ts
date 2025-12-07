@@ -143,9 +143,9 @@ export class TecnicosController {
     }
 
     @MessagePattern(TECHNICIAN_PATTERNS.GET_TOP_RATED_TECHNICIANS)
-    async getTopRated(@Payload() data: { limit?: number }) {
+    async getTopRated(@Payload() data: { limit?: string | number }) {
         try {
-            const { limit = 10 } = data;
+            const limit = Number(data.limit) || 10;
             this.logger.log(`Getting top rated technicians (limit: ${limit})`);
             const tecnicos = await this.tecnicosService.getTopRated(limit);
             return { success: true, data: tecnicos };
@@ -154,7 +154,7 @@ export class TecnicosController {
             return {
                 success: false,
                 error: error.message,
-                statusCode: error.status || 500
+                statusCode: error.status || 500,
             };
         }
     }

@@ -80,7 +80,7 @@ export class TechnicianController {
 
     @Get('tecnicos/top-rated')
     @Public()
-    getTopRatedTechnicians(@Query('limit') limit?: string | number,){
+    getTopRatedTechnicians(@Query('limit') limit?: any) {
         const parsedLimit = Number(limit) || 10;
         return this.technicianProxyService.getTopRatedTechnicians(parsedLimit);
     }

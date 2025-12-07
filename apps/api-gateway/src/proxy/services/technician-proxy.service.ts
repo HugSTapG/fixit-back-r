@@ -40,8 +40,12 @@ export class TechnicianProxyService extends MicroserviceProxyService {
         return this.sendToTechnician(TECHNICIAN_PATTERNS.FIND_TECHNICIANS_BY_TIPO_SERVICIO, { idTipoServicio, filterDto });
     }
 
-    getTopRatedTechnicians(limit?: number): Observable<any> {
-        return this.sendToTechnician(TECHNICIAN_PATTERNS.GET_TOP_RATED_TECHNICIANS, { limit });
+    getTopRatedTechnicians(limit?: number | string): Observable<any> {
+    const limitStr = String(limit ?? 10);
+    return this.sendToTechnician(
+        TECHNICIAN_PATTERNS.GET_TOP_RATED_TECHNICIANS,
+        { limit: limitStr }
+    );
     }
 
     findAvailableForRequest(idSolicitud: number, codigoParroquia?: string, idTipoServicio?: number): Observable<any> {
