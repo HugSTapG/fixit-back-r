@@ -35,24 +35,6 @@ export class RequestController {
     // ========================================
 
     /**
-     * Obtiene todas las solicitudes con filtros opcionales
-     */
-    @Get('solicitudes')
-    @Public()
-    findAllSolicitudes(@Query() filterDto: any): Observable<any> {
-        return this.requestProxyService.findAllSolicitudes(filterDto);
-    }
-
-    /**
-     * Obtiene una solicitud específica por su ID
-     */
-    @Get('solicitudes/:id')
-    @UseGuards(JwtAuthGuard)
-    findOneSolicitud(@Param('id', ParseIntPipe) id: number): Observable<any> {
-        return this.requestProxyService.findSolicitudById(id);
-    }
-
-    /**
      * Obtiene estadísticas generales de solicitudes (solo ADMIN)
      */
     @Get('solicitudes/stats/general')
@@ -81,6 +63,24 @@ export class RequestController {
         @Query() filterDto: any
     ): Observable<any> {
         return this.requestProxyService.findSolicitudesByUser(req.user.idUser, filterDto);
+    }
+
+    /**
+     * Obtiene una solicitud específica por su ID
+     */
+    @Get('solicitudes/:id')
+    @UseGuards(JwtAuthGuard)
+    findOneSolicitud(@Param('id', ParseIntPipe) id: number): Observable<any> {
+        return this.requestProxyService.findSolicitudById(id);
+    }
+
+    /**
+     * Obtiene todas las solicitudes con filtros opcionales
+     */
+    @Get('solicitudes')
+    @Public()
+    findAllSolicitudes(@Query() filterDto: any): Observable<any> {
+        return this.requestProxyService.findAllSolicitudes(filterDto);
     }
 
     /**

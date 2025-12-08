@@ -10,5 +10,6 @@ export class AuthResponseDto {
         apellidos: string;
         email: string;
         rol: RolUsuario;
+        createdAt: string;
     };
 }

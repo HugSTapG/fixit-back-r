@@ -81,6 +81,7 @@ export class AuthService {
                 apellidos: user.apellidos,
                 email: user.email,
                 rol: user.rol,
+                createdAt: user.createdAt.toISOString(),
             },
         };
     }
@@ -154,6 +155,7 @@ export class AuthService {
                 apellidos: user.apellidos,
                 email: user.email,
                 rol: user.rol,
+                createdAt: user.createdAt.toISOString(),
             },
         };
     }
