@@ -1,7 +1,9 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { KafkaService } from '@app/events';
-import { CreateUsuarioDto, UpdateUsuarioDto, SwitchRoleDto } from '../dto';
+import { CreateUsuarioDto, UpdateUsuarioDto, SwitchRoleDto, AuthResponseDto } from '../dto';
 import { UsuarioSinPassword } from '../interfaces';
 import { UsuarioMapper } from '../mappers';
 import { RolUsuario } from '@app/shared';
@@ -12,6 +14,8 @@ export class UsuariosService {
     constructor(
         private readonly database: DatabaseService,
         private readonly kafkaService: KafkaService,
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) { }
 
     async findById(idUser: number): Promise<UsuarioSinPassword | null> {
@@ -235,7 +239,7 @@ export class UsuariosService {
         return UsuarioMapper.toInterfaceSinPassword(updatedUser);
     }
 
-    async switchRole(userId: number, switchRoleDto: SwitchRoleDto): Promise<UsuarioSinPassword> {
+    async switchRole(userId: number, switchRoleDto: SwitchRoleDto): Promise<AuthResponseDto> {
         const existingUser = await this.database.usuario.findUnique({
             where: { idUser: userId },
         });
@@ -249,6 +253,25 @@ export class UsuariosService {
             data: { rol: switchRoleDto.nuevoRol },
         });
 
+        // Generar nuevos tokens con el nuevo rol
+        const payload = {
+            sub: updatedUser.idUser,
+            cedula: updatedUser.cedula,
+            email: updatedUser.email,
+            nombres: updatedUser.nombres,
+            apellidos: updatedUser.apellidos,
+            rol: updatedUser.rol, // ← Nuevo rol
+        };
+
+        const accessToken = this.jwtService.sign(payload, {
+            expiresIn: this.configService.get('JWT_EXPIRES_IN', '15m'),
+        });
+
+        const refreshToken = this.jwtService.sign(payload, {
+            secret: this.configService.get('JWT_REFRESH_SECRET'),
+            expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+        });
+
         // Emitir evento
         await this.kafkaService.publishEvent('user.role_switched', {
             userId,
@@ -256,7 +279,19 @@ export class UsuariosService {
             newRole: switchRoleDto.nuevoRol,
         });
 
-        return UsuarioMapper.toInterfaceSinPassword(updatedUser);
+        return {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            user: {
+                idUser: updatedUser.idUser,
+                cedula: updatedUser.cedula,
+                nombres: updatedUser.nombres,
+                apellidos: updatedUser.apellidos,
+                email: updatedUser.email,
+                rol: updatedUser.rol,
+                createdAt: updatedUser.createdAt.toISOString(),
+            },
+        };
     }
 
     private validarCedulaEcuatoriana(cedula: string): { esValida: boolean; mensaje: string } {
