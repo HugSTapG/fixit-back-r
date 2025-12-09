@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, Length, IsInt, IsOptional, IsBoolean, MinLength } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, Length, IsInt, IsOptional, IsBoolean, MinLength, IsIn } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 import { RolUsuario } from '@app/shared';
 
@@ -54,8 +54,8 @@ export class UpdateUsuarioDto extends PartialType(CreateUsuarioDto) {
 
 export class SwitchRoleDto {
     @IsNotEmpty({ message: 'Nuevo rol es obligatorio' })
-    @IsEnum([RolUsuario.TECNICO, RolUsuario.CLIENTE], {
+    @IsIn([RolUsuario.TECNICO, RolUsuario.CLIENTE], {
         message: 'El rol debe ser TECNICO o CLIENTE'
     })
-    nuevoRol: RolUsuario.TECNICO | RolUsuario.CLIENTE;
+    nuevoRol: RolUsuario;
 }
