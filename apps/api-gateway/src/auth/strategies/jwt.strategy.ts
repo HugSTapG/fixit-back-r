@@ -20,10 +20,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        if (!payload.sub || !payload.cedula || !payload.rol) {
+        // Validar mínimamente (opcional)
+        if (!payload.sub || !payload.rol) {
             throw new UnauthorizedException('Invalid token payload');
         }
 
+        // Convertimos a nuestro modelo interno
         return {
             idUser: payload.sub,
             cedula: payload.cedula,

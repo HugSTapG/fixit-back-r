@@ -521,7 +521,7 @@ export class TechnicianController {
   // === CALIFICACIONES ===
   @Post('calificaciones')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RolUsuario.CLIENTE)
+  @Roles(RolUsuario.ADMIN, RolUsuario.CLIENTE)
   createCalificacion(
     @Body() createCalificacionDto: any,
     @Request() req: any,

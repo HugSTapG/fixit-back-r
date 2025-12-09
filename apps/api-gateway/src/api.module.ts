@@ -159,11 +159,7 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
+    }
   ],
 })
 export class ApiModule {
