@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
@@ -11,6 +11,8 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuariosService {
+    private readonly logger = new Logger(UsuariosService.name);
+
     constructor(
         private readonly database: DatabaseService,
         private readonly kafkaService: KafkaService,
@@ -240,39 +242,74 @@ export class UsuariosService {
     }
 
     async switchRole(userId: number, switchRoleDto: SwitchRoleDto): Promise<AuthResponseDto> {
+        // 1. Obtener usuario actual con sus roles
         const existingUser = await this.database.usuario.findUnique({
             where: { idUser: userId },
+            select: {
+                idUser: true,
+                cedula: true,
+                email: true,
+                nombres: true,
+                apellidos: true,
+                roles: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
 
         if (!existingUser) {
             throw new NotFoundException('Usuario no encontrado');
         }
 
-        // Obtener roles actuales (siempre es array ahora)
-        const currentRoles = existingUser.roles || [RolUsuario.CLIENTE];
+        // 2. Obtener array de roles actuales (siempre incluye CLIENTE por defecto)
+        const currentRoles = Array.isArray(existingUser.roles) 
+            ? existingUser.roles 
+            : [RolUsuario.CLIENTE];
         
-        // Si el nuevo rol ya existe, no hacer nada en la BD
-        if (currentRoles.includes(switchRoleDto.nuevoRol)) {
-            return this.generateAuthResponse(existingUser, currentRoles);
+        this.logger.log(`[switchRole] Usuario ${userId} tiene roles actuales:`, currentRoles);
+
+        // 3. Verificar si el nuevo rol ya existe en el array
+        const roleExists = currentRoles.includes(switchRoleDto.nuevoRol as unknown as RolUsuario);
+        if (roleExists) {
+            this.logger.log(`[switchRole] Rol ${switchRoleDto.nuevoRol} ya existe para usuario ${userId}`);
+            return this.generateAuthResponse(existingUser as any, currentRoles);
         }
 
-        // Si no existe, agregar el nuevo rol
+        // 4. Agregar el nuevo rol al array (sin duplicados)
         const updatedRoles = [...currentRoles, switchRoleDto.nuevoRol];
+        this.logger.log(`[switchRole] Agregando rol ${switchRoleDto.nuevoRol} a usuario ${userId}. Nuevos roles:`, updatedRoles);
 
+        // 5. Actualizar usuario en la BD con el nuevo array de roles
         const updatedUser = await this.database.usuario.update({
             where: { idUser: userId },
-            data: { roles: updatedRoles },
+            data: { 
+                roles: updatedRoles as RolUsuario[],
+            },
+            select: {
+                idUser: true,
+                cedula: true,
+                email: true,
+                nombres: true,
+                apellidos: true,
+                roles: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
 
-        // Emitir evento
+        this.logger.log(`[switchRole] Usuario ${userId} actualizado en BD. Roles guardados:`, updatedUser.roles);
+
+        // 6. Emitir evento de cambio de rol
         await this.kafkaService.publishEvent('user.role_switched', {
             userId,
             previousRoles: currentRoles,
-            newRoles: updatedRoles,
+            newRoles: updatedUser.roles,
             addedRole: switchRoleDto.nuevoRol,
+            timestamp: new Date().toISOString(),
         });
 
-        return this.generateAuthResponse(updatedUser, updatedRoles);
+        // 7. Generar y retornar nueva respuesta de autenticación con tokens
+        return this.generateAuthResponse(updatedUser as any, updatedUser.roles);
     }
 
     /**
