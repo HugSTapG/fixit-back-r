@@ -27,7 +27,7 @@ model Usuario {
   telefono        String?
   direccion       String?
   fechaNacimiento DateTime?
-  rol             RolUsuario @default(CLIENTE)
+  roles           RolUsuario[] @default([CLIENTE])  // Array de roles - siempre incluye al menos CLIENTE
   emailVerificado Boolean  @default(false)
   activo          Boolean  @default(true)
   isActive        Boolean  @default(true)  // Campo adicional esperado por servicios

@@ -96,7 +96,7 @@ export class UsuariosService {
         await this.kafkaService.publishEvent('user.created', {
             userId: user.idUser,
             email: user.email,
-            rol: user.rol,
+            roles: user.roles || [RolUsuario.CLIENTE],
             cedula: user.cedula,
         });
 
@@ -182,7 +182,7 @@ export class UsuariosService {
                 telefono: true,
                 direccion: true,
                 fechaNacimiento: true,
-                rol: true,
+                roles: true,
                 emailVerificado: true,
                 activo: true,
                 isActive: true,
@@ -201,7 +201,7 @@ export class UsuariosService {
             telefono: user.telefono || undefined,
             direccion: user.direccion || undefined,
             fechaNacimiento: user.fechaNacimiento || undefined,
-            rol: user.rol as RolUsuario,
+            roles: (user.roles || [RolUsuario.CLIENTE]) as RolUsuario[],
             emailVerificado: user.emailVerificado,
             activo: user.activo,
             isActive: user.isActive,
@@ -248,19 +248,47 @@ export class UsuariosService {
             throw new NotFoundException('Usuario no encontrado');
         }
 
+        // Obtener roles actuales (siempre es array ahora)
+        const currentRoles = existingUser.roles || [RolUsuario.CLIENTE];
+        
+        // Si el nuevo rol ya existe, no hacer nada en la BD
+        if (currentRoles.includes(switchRoleDto.nuevoRol)) {
+            return this.generateAuthResponse(existingUser, currentRoles);
+        }
+
+        // Si no existe, agregar el nuevo rol
+        const updatedRoles = [...currentRoles, switchRoleDto.nuevoRol];
+
         const updatedUser = await this.database.usuario.update({
             where: { idUser: userId },
-            data: { rol: switchRoleDto.nuevoRol },
+            data: { roles: updatedRoles },
         });
 
-        // Generar nuevos tokens con el nuevo rol
+        // Emitir evento
+        await this.kafkaService.publishEvent('user.role_switched', {
+            userId,
+            previousRoles: currentRoles,
+            newRoles: updatedRoles,
+            addedRole: switchRoleDto.nuevoRol,
+        });
+
+        return this.generateAuthResponse(updatedUser, updatedRoles);
+    }
+
+    /**
+     * Generar respuesta de autenticación con todos los roles
+     */
+    private generateAuthResponse(
+        user: any,
+        roles: any[],
+    ): AuthResponseDto {
         const payload = {
-            sub: updatedUser.idUser,
-            cedula: updatedUser.cedula,
-            email: updatedUser.email,
-            nombres: updatedUser.nombres,
-            apellidos: updatedUser.apellidos,
-            rol: updatedUser.rol, // ← Nuevo rol
+            sub: user.idUser,
+            cedula: user.cedula,
+            email: user.email,
+            nombres: user.nombres,
+            apellidos: user.apellidos,
+            roles: roles as RolUsuario[], // Array de roles en el token
         };
 
         const accessToken = this.jwtService.sign(payload, {
@@ -272,24 +300,17 @@ export class UsuariosService {
             expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
         });
 
-        // Emitir evento
-        await this.kafkaService.publishEvent('user.role_switched', {
-            userId,
-            oldRole: existingUser.rol,
-            newRole: switchRoleDto.nuevoRol,
-        });
-
         return {
             access_token: accessToken,
             refresh_token: refreshToken,
             user: {
-                idUser: updatedUser.idUser,
-                cedula: updatedUser.cedula,
-                nombres: updatedUser.nombres,
-                apellidos: updatedUser.apellidos,
-                email: updatedUser.email,
-                rol: updatedUser.rol,
-                createdAt: updatedUser.createdAt.toISOString(),
+                idUser: user.idUser,
+                cedula: user.cedula,
+                nombres: user.nombres,
+                apellidos: user.apellidos,
+                email: user.email,
+                roles: roles as RolUsuario[], // Array de roles en user
+                createdAt: user.createdAt.toISOString(),
             },
         };
     }

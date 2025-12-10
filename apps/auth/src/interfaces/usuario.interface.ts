@@ -11,7 +11,7 @@ export interface Usuario {
   telefono?: string;
   direccion?: string;
   fechaNacimiento?: Date;
-  rol: RolUsuario;
+  roles: RolUsuario[];
   emailVerificado: boolean;
   activo: boolean;
   isActive: boolean;
@@ -29,7 +29,7 @@ export interface CreateUsuarioData {
   email: string;
   password: string;
   telefono?: string;
-  rol: RolUsuario;
+  roles?: RolUsuario[];
 }
 
 export interface UpdateUsuarioData {

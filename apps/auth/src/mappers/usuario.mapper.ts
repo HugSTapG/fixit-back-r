@@ -15,7 +15,7 @@ export class UsuarioMapper {
             telefono: prismaUsuario.telefono || undefined,
             direccion: prismaUsuario.direccion || undefined,
             fechaNacimiento: prismaUsuario.fechaNacimiento || undefined,
-            rol: prismaUsuario.rol as RolUsuario,
+            roles: (prismaUsuario.roles || ['CLIENTE']) as RolUsuario[],
             emailVerificado: prismaUsuario.emailVerificado,
             activo: prismaUsuario.activo,
             isActive: prismaUsuario.isActive,
@@ -40,7 +40,7 @@ export class UsuarioMapper {
             password: data.password || '', // Campo requerido por Prisma
             passwordHash: data.passwordHash,
             telefono: data.telefono || null,
-            rol: data.rol,
+            roles: data.roles || ['CLIENTE'],
             isActive: data.isActive !== undefined ? data.isActive : true,
             activo: data.activo !== undefined ? data.activo : true,
             emailVerificado: data.emailVerificado !== undefined ? data.emailVerificado : false,

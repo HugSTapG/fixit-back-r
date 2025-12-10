@@ -9,7 +9,7 @@ export class AuthResponseDto {
         nombres: string;
         apellidos: string;
         email: string;
-        rol: RolUsuario;
+        roles: RolUsuario[];  // Array de roles
         createdAt: string;
     };
 }
