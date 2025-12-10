@@ -269,21 +269,21 @@ export class UsuariosService {
         this.logger.log(`[switchRole] Usuario ${userId} tiene roles actuales:`, currentRoles);
 
         // 3. Verificar si el nuevo rol ya existe en el array
-        const roleExists = currentRoles.includes(switchRoleDto.nuevoRol as unknown as RolUsuario);
+        const roleExists = currentRoles.includes(switchRoleDto.nuevoRol as RolUsuario);
         if (roleExists) {
             this.logger.log(`[switchRole] Rol ${switchRoleDto.nuevoRol} ya existe para usuario ${userId}`);
             return this.generateAuthResponse(existingUser as any, currentRoles);
         }
 
         // 4. Agregar el nuevo rol al array (sin duplicados)
-        const updatedRoles = [...currentRoles, switchRoleDto.nuevoRol];
+        const updatedRoles = [...currentRoles, switchRoleDto.nuevoRol as RolUsuario];
         this.logger.log(`[switchRole] Agregando rol ${switchRoleDto.nuevoRol} a usuario ${userId}. Nuevos roles:`, updatedRoles);
 
         // 5. Actualizar usuario en la BD con el nuevo array de roles
         const updatedUser = await this.database.usuario.update({
             where: { idUser: userId },
             data: { 
-                roles: updatedRoles as RolUsuario[],
+                roles: updatedRoles,
             },
             select: {
                 idUser: true,
@@ -309,7 +309,7 @@ export class UsuariosService {
         });
 
         // 7. Generar y retornar nueva respuesta de autenticación con tokens
-        return this.generateAuthResponse(updatedUser as any, updatedUser.roles);
+        return this.generateAuthResponse(updatedUser as any, updatedUser.roles as RolUsuario[]);
     }
 
     /**

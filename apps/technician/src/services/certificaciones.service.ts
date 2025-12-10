@@ -72,9 +72,9 @@ export class CertificacionesService {
      */
     async create(
         createCertificacionDto: CreateCertificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden crear certificaciones');
         }
 
@@ -100,9 +100,9 @@ export class CertificacionesService {
     async update(
         idCertificacion: number,
         updateCertificacionDto: UpdateCertificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden actualizar certificaciones');
         }
 
@@ -130,9 +130,9 @@ export class CertificacionesService {
      */
     async remove(
         idCertificacion: number,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden eliminar certificaciones');
         }
 

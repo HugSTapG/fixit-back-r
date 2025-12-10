@@ -66,7 +66,9 @@ export class NotificationController {
     @Get('stats')
     @UseGuards(JwtAuthGuard)
     getStats(@Request() req: any): Observable<any> {
-        const idUser = req.user.rol === RolUsuario.ADMIN ? undefined : req.user.idUser;
+        const idUser = req.user.roles?.includes(RolUsuario.ADMIN)
+            ? undefined
+            : req.user.idUser;
         this.logger.log(`Getting notification stats for user: ${idUser || 'all'}`);
         return this.notificationProxyService.getNotificationStats(idUser);
     }

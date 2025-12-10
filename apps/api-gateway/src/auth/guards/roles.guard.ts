@@ -21,7 +21,10 @@ export class RolesGuard implements CanActivate {
         console.log(">>> requiredRoles:", requiredRoles);
         console.log(">>> user:", user);
 
-        return requiredRoles.some((role) => user?.rol === role);
+        // Soportar tanto roles array como rol singular
+        const userRoles = user?.roles || (user?.rol ? [user.rol] : []);
+
+        // Verificar si el usuario tiene al menos uno de los roles requeridos
+        return requiredRoles.some((role) => userRoles.includes(role));
     }
 }
-

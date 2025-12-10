@@ -38,7 +38,7 @@ export class CalificacionesService {
      */
     async create(
         createCalificacionDto: CreateCalificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const { idSolicitud, idTecnico, puntaje } = createCalificacionDto;
 
@@ -97,7 +97,7 @@ export class CalificacionesService {
     async update(
         idCalificacion: number,
         updateCalificacionDto: UpdateCalificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const calificacion = await this.database.calificacion.findUnique({
             where: { idCalificacion }
@@ -112,7 +112,7 @@ export class CalificacionesService {
             (Date.now() - calificacion.fechaCalificacion.getTime()) / (1000 * 60 * 60 * 24)
         );
 
-        if (diasTranscurridos > 7 && currentUser.rol !== RolUsuario.ADMIN) {
+        if (diasTranscurridos > 7 && !currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new BadRequestException('No se pueden actualizar calificaciones después de 7 días');
         }
 

@@ -110,7 +110,7 @@ export class TechnicianController {
   // POST, PUT, DELETE (el orden no importa tanto para estos)
   @Post('tecnicos')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO)
+  @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO, RolUsuario.CLIENTE)
   createTechnician(
     @Body() createTecnicoDto: any,
     @Request() req: any,

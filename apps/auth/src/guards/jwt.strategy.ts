@@ -26,8 +26,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        if (!payload.sub || !payload.cedula || !payload.rol) {
-            throw new UnauthorizedException('Invalid token payload');
+        // Validar que el token tiene los campos requeridos
+        if (!payload.sub || (!payload.roles && !payload.rol)) {
+            throw new UnauthorizedException('Invalid token payload: missing sub or roles');
         }
 
         // Verificar que el usuario aún existe y está activo
@@ -42,13 +43,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             throw new UnauthorizedException('User not found or inactive');
         }
 
+        // Soportar tanto la nueva estructura (roles array) como la antigua (rol singular)
+        const roles = payload.roles || (payload.rol ? [payload.rol] : []);
+
         return {
             idUser: payload.sub,
             cedula: payload.cedula,
             email: payload.email,
             nombres: payload.nombres,
             apellidos: payload.apellidos,
-            rol: payload.rol,
+            roles: roles,
         };
     }
 }

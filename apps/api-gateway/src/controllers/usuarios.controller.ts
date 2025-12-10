@@ -19,7 +19,7 @@ import { Observable } from 'rxjs';
 export class UsuariosController {
   constructor(private readonly authProxyService: AuthProxyService) {}
 
-  @Put('switch-role')
+  @Post('switch-role')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolUsuario.ADMIN, RolUsuario.CLIENTE, RolUsuario.TECNICO)
   switchRole(@Request() req: any, @Body() switchRoleDto: any): Observable<any> {

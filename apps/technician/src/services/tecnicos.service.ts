@@ -234,12 +234,12 @@ export class TecnicosService {
     async update(
         idTecnico: number,
         updateTecnicoDto: UpdateTecnicoDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const tecnico = await this.findOne(idTecnico);
 
         // Verificar permisos (la validación se hace aquí)
-        if (currentUser.rol !== RolUsuario.ADMIN && tecnico.idUser !== currentUser.idUser) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
             throw new ForbiddenException('No tienes permisos para actualizar este técnico');
         }
 
@@ -273,10 +273,10 @@ export class TecnicosService {
      */
     async deactivate(
         idTecnico: number,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         // Solo admin puede desactivar técnicos
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden desactivar técnicos');
         }
 

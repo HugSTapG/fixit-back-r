@@ -44,7 +44,7 @@ export class TecnicosParroquiasService {
     async create(
         idTecnico: number,
         createTecnicoParroquiaDto: CreateTecnicoParroquiaDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const { codigoParroquia } = createTecnicoParroquiaDto;
 
@@ -58,7 +58,7 @@ export class TecnicosParroquiasService {
         }
 
         // Verificar permisos
-        if (currentUser.rol !== RolUsuario.ADMIN && tecnico.idUser !== currentUser.idUser) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
             throw new ForbiddenException('No tienes permisos para asignar parroquias a este técnico');
         }
 
@@ -102,7 +102,7 @@ export class TecnicosParroquiasService {
     async remove(
         idTecnico: number,
         codigoParroquia: string,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         // Verificar que la asignación existe
         const asignacion = await this.database.tecnicoParroquia.findUnique({
@@ -122,7 +122,7 @@ export class TecnicosParroquiasService {
         }
 
         // Verificar permisos
-        if (currentUser.rol !== RolUsuario.ADMIN && asignacion.tecnico.idUser !== currentUser.idUser) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN) && asignacion.tecnico.idUser !== currentUser.idUser) {
             throw new ForbiddenException('No tienes permisos para eliminar esta asignación');
         }
 

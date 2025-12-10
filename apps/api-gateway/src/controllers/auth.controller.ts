@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, Request, UseGuards, Put } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, Request, UseGuards } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
 import { Public } from '@app/shared';
 import { AuthProxyService } from '../proxy/services/auth-proxy.service';
@@ -8,6 +8,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authProxyService: AuthProxyService) { }
+
+    @Public()
+    @Post('register')
+    @HttpCode(201)
+    register(@Body() createUsuarioDto: any): Observable<any> {
+        return this.authProxyService.createUser(createUsuarioDto);
+    }
 
     @Public()
     @Post('login')
@@ -36,14 +43,14 @@ export class AuthController {
         return this.authProxyService.logout(token);
     }
 
-    @Put('switch-role')
+    @Post('switch-role')
     @HttpCode(200)
     @UseGuards(JwtAuthGuard)
     switchRole(
-        @Request() req: ExpressRequest,
+        @Request() req: any,
         @Body() body: { nuevoRol: string },
     ): Observable<any> {
-        const userId = (req.user as any)?.sub;
+        const userId = req.user.idUser;
 
         if (!userId) {
             throw new Error('User ID not found in token');
