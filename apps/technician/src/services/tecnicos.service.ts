@@ -498,4 +498,110 @@ export class TecnicosService {
 
         return { promedio, total: calificaciones.length };
     }
+
+    /**
+     * Envía una solicitud de verificación del técnico
+     * Cambia el status a VERIFICACION_PENDIENTE
+     */
+    async submitVerification(idTecnico: number, currentUser: { idUser: number; roles: RolUsuario[] }) {
+        const tecnico = await this.findOne(idTecnico);
+
+        // Verificar que el usuario puede hacer esto (el técnico o un admin)
+        if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
+            throw new ForbiddenException('No tienes permisos para enviar verificación para este técnico');
+        }
+
+        // Actualizar estado a VERIFICACION_PENDIENTE
+        const updatedTecnico = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: 'VERIFICACION_PENDIENTE',
+                updatedBy: currentUser.idUser,
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.verification_submitted', {
+            idTecnico,
+            idUser: tecnico.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(updatedTecnico);
+    }
+
+    /**
+     * Aprueba la verificación de un técnico (solo admins)
+     * Cambia el status a VERIFICADO
+     */
+    async approveVerification(idTecnico: number, currentUser: { idUser: number; roles: RolUsuario[] }) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
+            throw new ForbiddenException('Solo los administradores pueden aprobar verificaciones');
+        }
+
+        const tecnico = await this.findOne(idTecnico);
+
+        const updatedTecnico = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: 'VERIFICADO',
+                updatedBy: currentUser.idUser,
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.verified', {
+            idTecnico,
+            idUser: tecnico.idUser,
+            approvedBy: currentUser.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(updatedTecnico);
+    }
+
+    /**
+     * Rechaza la verificación de un técnico (solo admins)
+     * Cambia el status de vuelta a REGISTRADO
+     */
+    async rejectVerification(idTecnico: number, currentUser: { idUser: number; roles: RolUsuario[] }) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
+            throw new ForbiddenException('Solo los administradores pueden rechazar verificaciones');
+        }
+
+        const tecnico = await this.findOne(idTecnico);
+
+        const updatedTecnico = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: 'REGISTRADO',
+                updatedBy: currentUser.idUser,
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.verification_rejected', {
+            idTecnico,
+            idUser: tecnico.idUser,
+            rejectedBy: currentUser.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(updatedTecnico);
+    }
 }

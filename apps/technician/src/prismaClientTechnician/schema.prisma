@@ -39,16 +39,24 @@ enum PuntajeCalificacion {
   TERRIBLE
 }
 
+enum TecnicoStatus {
+  REGISTRADO
+  VERIFICACION_PENDIENTE
+  VERIFICADO
+  BLOQUEADO
+}
+
 // Modelo Técnico (principal del microservicio)
 model Tecnico {
-  idTecnico              Int      @id @default(autoincrement())
-  idUser                 Int      @unique  // Referencia a user del microservicio Auth
-  totalCalificaciones    Int      @default(0)
-  promedioCalificaciones Decimal? @db.Decimal(3, 2)
-  isActive               Boolean  @default(true)
+  idTecnico              Int            @id @default(autoincrement())
+  idUser                 Int            @unique  // Referencia a user del microservicio Auth
+  status                 TecnicoStatus  @default(REGISTRADO)
+  totalCalificaciones    Int            @default(0)
+  promedioCalificaciones Decimal?       @db.Decimal(3, 2)
+  isActive               Boolean        @default(true)
   deletedAt              DateTime?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
   createdBy              Int?
   updatedBy              Int?
 

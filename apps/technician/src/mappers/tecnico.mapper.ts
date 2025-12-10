@@ -6,6 +6,7 @@ export class TecnicoMapper {
         return {
             idTecnico: prismaTecnico.idTecnico,
             idUser: prismaTecnico.idUser,
+            status: prismaTecnico.status,
             totalCalificaciones: prismaTecnico.totalCalificaciones,
             promedioCalificaciones: prismaTecnico.promedioCalificaciones ? Number(prismaTecnico.promedioCalificaciones) : undefined,
             isActive: prismaTecnico.isActive,
@@ -20,6 +21,7 @@ export class TecnicoMapper {
     static toPrismaCreateData(data: any) {
         return {
             idUser: data.idUser,
+            status: data.status || 'REGISTRADO',  // Default status when creating technician
             isActive: data.isActive !== undefined ? data.isActive : true,
             createdBy: data.createdBy || null,
         };
@@ -27,6 +29,10 @@ export class TecnicoMapper {
 
     static toPrismaUpdateData(data: any) {
         const updateData: any = {};
+
+        if (data.status !== undefined) {
+            updateData.status = data.status;
+        }
 
         if (data.totalCalificaciones !== undefined) {
             updateData.totalCalificaciones = data.totalCalificaciones;
