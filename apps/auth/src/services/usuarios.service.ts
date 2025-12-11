@@ -275,7 +275,7 @@ export class UsuariosService {
             return this.generateAuthResponse(existingUser as any, currentRoles);
         }
 
-        // 4. Agregar el nuevo rol al array (sin duplicados)
+        // 4. Agregar el nuevo rol al array (sin duplicados) - Los roles NUNCA se quitan
         const updatedRoles = [...currentRoles, switchRoleDto.nuevoRol as RolUsuario];
         this.logger.log(`[switchRole] Agregando rol ${switchRoleDto.nuevoRol} a usuario ${userId}. Nuevos roles:`, updatedRoles);
 
