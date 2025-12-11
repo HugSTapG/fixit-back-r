@@ -14,6 +14,7 @@ export * from './patterns/technician.patterns';
 export * from './patterns/request.patterns';
 export * from './patterns/payment.patterns';
 export * from './patterns/notification.patterns';
+export * from './patterns/maestrito.patterns';
 
 // Events
 export * from './events/base.event';

@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { MicroserviceProxyService } from './microservice-proxy.service';
-import { REQUEST_PATTERNS } from '@app/events';
+import { REQUEST_PATTERNS, MAESTRITO_PATTERNS } from '@app/events';
 
 @Injectable()
 export class RequestProxyService extends MicroserviceProxyService {
 
     // === SOLICITUDES ===
     findAllSolicitudes(filterDto?: any): Observable<any> {
+        // Envolver en filterDto como lo espera el microservicio
+        // filterDto ya contiene: estadoSolicitud (si viene), rol, y otros parámetros
         return this.sendToRequest(REQUEST_PATTERNS.FIND_ALL_SOLICITUDES, { filterDto });
     }
 
@@ -91,5 +93,22 @@ export class RequestProxyService extends MicroserviceProxyService {
 
     procesarPago(idSolicitud: number, procesarPagoDto: any, currentUser: any): Observable<any> {
         return this.sendToRequest(REQUEST_PATTERNS.PROCESAR_PAGO, { idSolicitud, procesarPagoDto, currentUser });
+    }
+
+    // === MAESTRITO ===
+    startMaestritoSession(idUser: number): Observable<any> {
+        return this.sendToRequest(MAESTRITO_PATTERNS.START_SESSION, { idUser });
+    }
+
+    sendMaestritoMessage(sessionId: string, message: string, idUser: number): Observable<any> {
+        return this.sendToRequest(MAESTRITO_PATTERNS.SEND_MESSAGE, { sessionId, message, idUser });
+    }
+
+    getMaestritoSessionHistory(sessionId: string): Observable<any> {
+        return this.sendToRequest(MAESTRITO_PATTERNS.GET_SESSION_HISTORY, { sessionId });
+    }
+
+    endMaestritoSession(sessionId: string): Observable<any> {
+        return this.sendToRequest(MAESTRITO_PATTERNS.END_SESSION, { sessionId });
     }
 }

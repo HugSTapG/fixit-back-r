@@ -10,7 +10,7 @@ import {
     UpdateSolicitudDto,
     SolicitudFilterDto
 } from '../dto/solicitud.dto';
-import { EstadoSolicitud } from '@app/shared';
+import { EstadoSolicitud, RolUsuario } from '@app/shared';
 
 /**
  * Servicio para la gestión de solicitudes de servicio
@@ -21,6 +21,9 @@ export class SolicitudesService {
 
     /**
      * Obtiene todas las solicitudes con filtros opcionales
+     * CLIENTE: retorna TODAS sus solicitudes sin default de estado
+     * TÉCNICO: default PENDIENTE si no especifica estado
+     * ADMIN: retorna TODAS sin default de estado
      */
     async findAll(filterDto?: SolicitudFilterDto) {
         const {
@@ -29,6 +32,7 @@ export class SolicitudesService {
             codigoParroquia,
             promocion,
             idUser,
+            rol,
             limit,
             page
         } = filterDto || {};
@@ -64,9 +68,15 @@ export class SolicitudesService {
             isActive: true
         };
 
+        // ✅ P1 CORRECCIÓN: Aplicar default PENDIENTE SOLO si es TÉCNICO
         if (estadoSolicitud) {
+            // Si se especifica estado explícitamente, usar ese
             where.estadoSolicitud = estadoSolicitud;
+        } else if (rol === RolUsuario.TECNICO) {
+            // Default: TÉCNICO ve solo PENDIENTE
+            where.estadoSolicitud = EstadoSolicitud.PENDIENTE;
         }
+        // Si es CLIENTE o ADMIN: sin default, retorna TODAS (sin filtro de estado)
 
         const parsedTipoServicio = parseNumber(idTipoServicio);
         if (parsedTipoServicio !== undefined) {

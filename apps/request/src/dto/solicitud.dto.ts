@@ -167,6 +167,13 @@ export class SolicitudFilterDto {
     idUser?: number;
 
     /**
+     * Rol del usuario (usado para aplicar defaults condicionales)
+     */
+    @IsOptional()
+    @IsString({ message: 'El rol debe ser una cadena de texto' })
+    rol?: string;
+
+    /**
      * Límite de resultados
      */
     @IsOptional()

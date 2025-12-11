@@ -11,10 +11,11 @@ import {
     Request,
     ParseIntPipe,
     HttpCode,
-    BadRequestException
+    BadRequestException,
+    DefaultValuePipe
 } from '@nestjs/common';
 import { Observable, switchMap, throwError } from 'rxjs';
-import { Public, Roles, RolUsuario } from '@app/shared';
+import { Public, Roles, RolUsuario, EstadoSolicitud } from '@app/shared';
 import { RequestProxyService } from '../proxy/services/request-proxy.service';
 import { TechnicianProxyService } from '../proxy/services/technician-proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -76,11 +77,23 @@ export class RequestController {
 
     /**
      * Obtiene todas las solicitudes con filtros opcionales
+     * CLIENTE: sin default, ver todas sus solicitudes
+     * TÉCNICO: default PENDIENTE, ver solicitudes disponibles
+     * ADMIN: sin default, ver todas
      */
     @Get('solicitudes')
-    @Public()
-    findAllSolicitudes(@Query() filterDto: any): Observable<any> {
-        return this.requestProxyService.findAllSolicitudes(filterDto);
+    @UseGuards(JwtAuthGuard)
+    findAllSolicitudes(
+        @Request() req: any,
+        @Query() filterDto: any,
+        @Query('estado') estado?: EstadoSolicitud
+    ): Observable<any> {
+        // Pasar rol del usuario actual al proxy
+        return this.requestProxyService.findAllSolicitudes({
+            ...filterDto,
+            ...(estado && { estadoSolicitud: estado }),
+            rol: req.user.rol
+        });
     }
 
     /**
@@ -275,5 +288,55 @@ export class RequestController {
                 return this.requestProxyService.cancelSolicitudTecnico(id, technicianResponse.data.idTecnico);
             })
         );
+    }
+
+    // ========================================
+    // MAESTRITO (Chat Inteligente)
+    // ========================================
+
+    /**
+     * Inicia una nueva sesión de chat con Maestrito
+     */
+    @Post('maestrito/start')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(RolUsuario.ADMIN, RolUsuario.CLIENTE)
+    startMaestritoSession(@Request() req: any): Observable<any> {
+        return this.requestProxyService.startMaestritoSession(req.user.idUser);
+    }
+
+    /**
+     * Envía un mensaje en una sesión de Maestrito
+     */
+    @Post('maestrito/:sessionId/message')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(RolUsuario.ADMIN, RolUsuario.CLIENTE)
+    sendMaestritoMessage(
+        @Param('sessionId') sessionId: string,
+        @Body() body: { message: string },
+        @Request() req: any
+    ): Observable<any> {
+        if (!body.message) {
+            return throwError(() => new BadRequestException('El campo "message" es requerido'));
+        }
+        return this.requestProxyService.sendMaestritoMessage(sessionId, body.message, req.user.idUser);
+    }
+
+    /**
+     * Obtiene el historial de una sesión de Maestrito
+     */
+    @Get('maestrito/:sessionId/history')
+    @UseGuards(JwtAuthGuard)
+    getMaestritoHistory(@Param('sessionId') sessionId: string): Observable<any> {
+        return this.requestProxyService.getMaestritoSessionHistory(sessionId);
+    }
+
+    /**
+     * Finaliza una sesión de Maestrito
+     */
+    @Delete('maestrito/:sessionId')
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(200)
+    endMaestritoSession(@Param('sessionId') sessionId: string): Observable<any> {
+        return this.requestProxyService.endMaestritoSession(sessionId);
     }
 }

@@ -6,6 +6,7 @@ import { SolicitudesTecnicosController } from './controllers/solicitudes-tecnico
 import { SolicitudesService } from './services/solicitudes.service';
 import { SolicitudesTecnicosService } from './services/solicitudes-tecnicos.service';
 import { HealthController } from './health/health.controller';
+import { MaestritoModule } from './maestrito/maestrito.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { HealthController } from './health/health.controller';
       isGlobal: true,
     }),
     DatabaseModule,
+    MaestritoModule,
   ],
   controllers: [
     SolicitudesController,
