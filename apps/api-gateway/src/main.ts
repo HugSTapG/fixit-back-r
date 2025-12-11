@@ -5,6 +5,7 @@ import { ApiModule } from './api.module';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { TimeoutInterceptor } from './interceptors/timeout.interceptor';
+import { ErrorResponseInterceptor } from './interceptors/error-response.interceptor';
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware';
 
 async function bootstrap() {
@@ -34,6 +35,7 @@ async function bootstrap() {
 
   // Global interceptors
   app.useGlobalInterceptors(
+    new ErrorResponseInterceptor(), // DEBE IR PRIMERO para convertir success: false a excepción
     new LoggingInterceptor(),
     new TimeoutInterceptor(30000) // 30 seconds timeout
   );

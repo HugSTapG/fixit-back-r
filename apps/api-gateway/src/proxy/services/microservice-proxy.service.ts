@@ -21,18 +21,14 @@ export class MicroserviceProxyService {
         data: any,
         timeoutMs: number = 30000
     ): Observable<any> {
-        // ✅ FIX: Usar paréntesis normales, no template literals
         this.logger.debug(`Sending message to pattern: ${pattern}`, data);
         
         return client.send(pattern, data).pipe(
             timeout(timeoutMs),
-            retry({
-                count: 2,
-                delay: 1000,
-            }),
+            // ⚠️ REMOVED retry logic - Microservice errors are application-level, not transient
+            // The ErrorResponseInterceptor will handle {success: false} responses
             catchError((error) => {
-                // ✅ FIX: Usar paréntesis normales, no template literals
-                this.logger.error(`Error in microservice call: ${pattern}`, error);
+                this.logger.error(`Error in microservice call: ${pattern}`, error.message);
                 return throwError(() => error);
             })
         );
