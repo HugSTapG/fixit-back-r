@@ -1,0 +1,196 @@
+services:
+  # Kafka con KRaft (sin Zookeeper)
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: fixit-kafka
+    hostname: kafka
+    user: root
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafka_data:/tmp/kraft-combined-logs
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - fixit-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: fixit-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - fixit-network
+
+  # PostgreSQL para Auth Service (maneja usuarios completos)
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: fixit-postgres-auth
+    restart: always
+    environment:
+      POSTGRES_DB: auth_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./docker/init-scripts/init-auth-db.sql:/docker-entrypoint-initdb.d/init-auth-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fixit-network
+
+  # PostgreSQL para Geo Service (con PostGIS)
+  postgres-geo:
+    image: postgis/postgis:15-3.4
+    container_name: fixit-postgres-geo
+    restart: always
+    environment:
+      POSTGRES_DB: geo_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_geo_data:/var/lib/postgresql/data
+      - ./docker/init-scripts/init-postgis.sh:/docker-entrypoint-initdb.d/init-postgis.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d geo_service && psql -U postgres -d geo_service -c \"SELECT PostGIS_Version();\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fixit-network
+
+  # PostgreSQL para Technician Service
+  postgres-technician:
+    image: postgres:15-alpine
+    container_name: fixit-postgres-technician
+    restart: always
+    environment:
+      POSTGRES_DB: technician_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_technician_data:/var/lib/postgresql/data
+      - ./docker/init-scripts/init-technician-db.sql:/docker-entrypoint-initdb.d/init-technician-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d technician_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fixit-network
+
+  # PostgreSQL para Request Service
+  postgres-request:
+    image: postgres:15-alpine
+    container_name: fixit-postgres-request
+    restart: always
+    environment:
+      POSTGRES_DB: request_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_request_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d request_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fixit-network
+
+  # PostgreSQL para Payment Service
+  postgres-payment:
+    image: postgres:15-alpine
+    container_name: fixit-postgres-payment
+    restart: always
+    environment:
+      POSTGRES_DB: payment_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payment_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fixit-network
+
+  # PostgreSQL para Notification Service
+  postgres-notification:
+    image: postgres:15-alpine
+    container_name: fixit-postgres-notification
+    restart: always
+    environment:
+      POSTGRES_DB: notification_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notification_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fixit-network
+
+volumes:
+  kafka_data:
+  redis_data:
+  postgres_auth_data:
+  postgres_geo_data:
+  postgres_technician_data:
+  postgres_request_data:
+  postgres_payment_data:
+  postgres_notification_data:
+
+networks:
+  fixit-network:
+    driver: bridge

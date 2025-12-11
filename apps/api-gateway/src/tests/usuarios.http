@@ -1,0 +1,53 @@
+### CREAR USUARIO (PÚBLICO)
+POST http://localhost:3300/api/v1/usuarios
+Content-Type: application/json
+
+{
+    "nombres": "Juan",
+    "apellidos": "Perez",
+    "email": "juan.perez@example.com",
+    "password": "password123",
+    "cedula": "1234567890",
+    "rol": "USER"
+}
+
+### OBTENER USUARIO POR ID
+GET http://localhost:3300/api/v1/usuarios/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER USUARIO POR CÉDULA
+GET http://localhost:3300/api/v1/usuarios/cedula/1234567890
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ACTUALIZAR USUARIO (ADMIN)
+PUT http://localhost:3300/api/v1/usuarios/1
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "nombres": "Juan Actualizado",
+    "apellidos": "Perez Actualizado",
+    "email": "juan.perez@example.com",
+    "rol": "USER"
+}
+
+### LISTAR TODOS LOS USUARIOS (ADMIN)
+GET http://localhost:3300/api/v1/usuarios
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### VERIFICAR EMAIL DEL USUARIO
+PUT http://localhost:3300/api/v1/usuarios/1/verify-email
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### DESACTIVAR USUARIO (ADMIN)
+PUT http://localhost:3300/api/v1/usuarios/1/deactivate
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### CAMBIAR ROL DEL USUARIO
+PUT http://localhost:3300/api/v1/usuarios/switch-role
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "rol": "ADMIN"
+}

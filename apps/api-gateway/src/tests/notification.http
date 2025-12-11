@@ -1,0 +1,139 @@
+### ===================== NOTIFICACIONES =====================
+
+### OBTENER TODAS LAS NOTIFICACIONES (ADMIN o usuario actual)
+GET http://localhost:3300/api/v1/notifications
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER NOTIFICACIONES DEL USUARIO ACTUAL
+GET http://localhost:3300/api/v1/notifications/my/notifications
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### CONTADOR DE NOTIFICACIONES NO LEÍDAS
+GET http://localhost:3300/api/v1/notifications/my/unread-count
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ESTADÍSTICAS DE NOTIFICACIONES
+GET http://localhost:3300/api/v1/notifications/stats
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### CREAR NOTIFICACIÓN (ADMIN)
+POST http://localhost:3300/api/v1/notifications
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "idUser": 2,
+    "titulo": "Nueva notificación",
+    "mensaje": "Tienes una nueva alerta",
+    "tipo": "info"
+}
+
+### MARCAR TODAS COMO LEÍDAS
+PUT http://localhost:3300/api/v1/notifications/mark-all-read
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER NOTIFICACIÓN POR ID
+GET http://localhost:3300/api/v1/notifications/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### MARCAR UNA NOTIFICACIÓN COMO LEÍDA
+PUT http://localhost:3300/api/v1/notifications/1/mark-read
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ACTUALIZAR NOTIFICACIÓN
+PUT http://localhost:3300/api/v1/notifications/1
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "titulo": "Actualización de notificación",
+    "mensaje": "Contenido actualizado"
+}
+
+### ELIMINAR NOTIFICACIÓN
+DELETE http://localhost:3300/api/v1/notifications/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### LIMPIAR NOTIFICACIONES ANTIGUAS (ADMIN)
+DELETE http://localhost:3300/api/v1/notifications/cleanup/old-notifications?days=90
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ===================== TOKENS DE NOTIFICACIONES =====================
+
+### OBTENER TODOS LOS TOKENS (ADMIN)
+GET http://localhost:3300/api/v1/notifications/tokens/all
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER TOKENS DEL USUARIO ACTUAL
+GET http://localhost:3300/api/v1/notifications/tokens/my-tokens
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ESTADÍSTICAS DE TOKENS (ADMIN)
+GET http://localhost:3300/api/v1/notifications/tokens/stats
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### REGISTRAR UN NUEVO TOKEN
+POST http://localhost:3300/api/v1/notifications/tokens/register
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "token": "fcm_device_token_123",
+    "plataforma": "android"
+}
+
+### DESACTIVAR UN TOKEN
+PUT http://localhost:3300/api/v1/notifications/tokens/fcm_device_token_123/deactivate
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### OBTENER TOKEN POR ID
+GET http://localhost:3300/api/v1/notifications/tokens/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ACTUALIZAR TOKEN
+PUT http://localhost:3300/api/v1/notifications/tokens/1
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "activo": false
+}
+
+### ELIMINAR TOKEN
+DELETE http://localhost:3300/api/v1/notifications/tokens/1
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### LIMPIAR TOKENS EXPIRADOS (ADMIN)
+DELETE http://localhost:3300/api/v1/notifications/tokens/cleanup/expired
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ===================== PUSH NOTIFICATIONS =====================
+
+### ENVIAR PUSH DE PRUEBA AL USUARIO ACTUAL
+POST http://localhost:3300/api/v1/notifications/push/test
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+### ENVIAR PUSH PERSONALIZADO (ADMIN)
+POST http://localhost:3300/api/v1/notifications/push/send/2
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "titulo": "Alerta Personalizada",
+    "mensaje": "Este es un mensaje de prueba",
+    "datosAdicionales": {"tipo": "alerta"}
+}
+
+### ENVIAR PUSH MASIVO (ADMIN)
+POST http://localhost:3300/api/v1/notifications/push/broadcast
+Content-Type: application/json
+Authorization: Bearer COLOCA_AQUI_EL_ACCESS_TOKEN
+
+{
+    "userIds": [2, 3, 4],
+    "notificacion": {
+        "titulo": "Notificación Masiva",
+        "mensaje": "Mensaje para múltiples usuarios",
+        "datosAdicionales": {"tipo": "broadcast"}
+    }
+}

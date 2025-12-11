@@ -1,0 +1,87 @@
+# --- Build outputs ---
+/dist
+/node_modules
+/build
+
+# --- Logs ---
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Tests ---
+/coverage
+/.nyc_output
+/junit.xml
+
+# --- IDEs and editors ---
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# --- Env files ---
+.env
+.env.*.local
+.env.local
+
+# --- Temp directories ---
+.temp
+.tmp
+
+# --- Runtime data ---
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# --- Prisma generated files ---
+apps/auth/src/prismaClientAuth/generated/
+/apps/auth/src/prismaClientAuth/migrations/**/steps.json
+apps/geo/src/prismaClientGeo/generated/
+/apps/geo/src/prismaClientGeo/migrations/**/steps.json
+apps/technician/src/prismaClientTechnician/generated/
+/apps/technician/src/prismaClientTechnician/migrations/**/steps.json
+
+# --- Prisma generated files (any depth) ---
+apps/**/src/prismaClient*/generated/
+
+# --- Docker ---
+docker/*.log
+docker/data/
+docker/postgres-data/
+docker/redis-data/
+
+# --- Scripts temporales ---
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# --- Cache ---
+.npm
+.yarn
+.pnpm-store
+.cache
+.eslintcache
+tsconfig.tsbuildinfo
