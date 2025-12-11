@@ -41,11 +41,11 @@ export class TechnicianProxyService extends MicroserviceProxyService {
     }
 
     getTopRatedTechnicians(limit?: number | string): Observable<any> {
-    const limitStr = String(limit ?? 10);
-    return this.sendToTechnician(
-        TECHNICIAN_PATTERNS.GET_TOP_RATED_TECHNICIANS,
-        { limit: limitStr }
-    );
+        const parsedLimit = Number(limit) || 10;
+        return this.sendToTechnician(
+            TECHNICIAN_PATTERNS.GET_TOP_RATED_TECHNICIANS,
+            { limit: parsedLimit }
+        );
     }
 
     findAvailableForRequest(idSolicitud: number, codigoParroquia?: string, idTipoServicio?: number): Observable<any> {

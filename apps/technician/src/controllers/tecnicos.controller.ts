@@ -192,9 +192,10 @@ export class TecnicosController {
   }
 
   @MessagePattern(TECHNICIAN_PATTERNS.GET_TOP_RATED_TECHNICIANS)
-  async getTopRated(@Payload() data: { limit?: number; page?: number }) {
+  async getTopRated(@Payload() data: { limit?: number | string; page?: number }) {
     try {
-      const limit = data?.limit || (typeof data === 'number' ? data : 10);
+      // Convert limit to number if it comes as string
+      const limit = Number(data?.limit) || 10;
 
       this.logger.log(`Getting top rated technicians (limit: ${limit})`);
       const tecnicos = await this.tecnicosService.getTopRated(limit);

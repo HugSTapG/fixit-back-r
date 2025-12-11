@@ -379,9 +379,12 @@ export class TecnicosCertificacionesService {
     /**
      * Obtiene certificaciones verificadas
      */
-    async findVerified(limit?: number) {
+    async findVerified(limit?: number | string) {
         try {
             this.logger.log('Fetching verified certifications');
+            
+            // Convert query parameter (string) to number for Prisma
+            const parsedLimit = Number(limit) || 20;
             
             return await this.databaseService.tecnicoCertificacion.findMany({
                 where: {
@@ -394,7 +397,7 @@ export class TecnicosCertificacionesService {
                 orderBy: {
                     fechaObtencion: 'desc'
                 },
-                take: limit
+                take: parsedLimit
             });
         } catch (error) {
             this.logger.error('Error fetching verified certifications', error.stack);

@@ -41,6 +41,10 @@ export class TecnicosService {
             page = 1
         } = filterDto || {};
 
+        // Convert query parameters (strings) to numbers for Prisma
+        const parsedLimit = Number(limit) || 20;
+        const parsedPage = Number(page) || 1;
+
         const where: any = {};
 
         if (isActive !== undefined) {
@@ -72,7 +76,7 @@ export class TecnicosService {
             };
         }
 
-        const skip = (page - 1) * limit;
+        const skip = (parsedPage - 1) * parsedLimit;
 
         const [tecnicos, total] = await Promise.all([
             this.database.tecnico.findMany({
@@ -103,7 +107,7 @@ export class TecnicosService {
                     { promedioCalificaciones: 'desc' },
                     { totalCalificaciones: 'desc' }
                 ],
-                take: limit,
+                take: parsedLimit,
                 skip
             }),
             this.database.tecnico.count({ where })
@@ -113,9 +117,9 @@ export class TecnicosService {
             tecnicos: tecnicos.map(t => TecnicoMapper.toInterface(t)),
             pagination: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
+                page: parsedPage,
+                limit: parsedLimit,
+                totalPages: Math.ceil(total / parsedLimit)
             }
         };
     }
@@ -322,7 +326,10 @@ export class TecnicosService {
     /**
      * Obtiene técnicos mejor calificados
      */
-    async getTopRated(limit: number = 10) {
+    async getTopRated(limit?: number | string) {
+        // Convert query parameter (string) to number for Prisma
+        const parsedLimit = Number(limit) || 10;
+        
         const tecnicos = await this.database.tecnico.findMany({
             where: {
                 isActive: true,
@@ -344,7 +351,7 @@ export class TecnicosService {
                 { promedioCalificaciones: 'desc' },
                 { totalCalificaciones: 'desc' }
             ],
-            take: limit
+            take: parsedLimit
         });
 
         return tecnicos.map(t => TecnicoMapper.toInterface(t));

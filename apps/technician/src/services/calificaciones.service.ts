@@ -153,13 +153,17 @@ export class CalificacionesService {
             page = 1
         } = filterDto || {};
 
-        const skip = (page - 1) * limit;
+        // Convert query parameters (strings) to numbers for Prisma
+        const parsedLimit = Number(limit) || 20;
+        const parsedPage = Number(page) || 1;
+
+        const skip = (parsedPage - 1) * parsedLimit;
 
         const [calificaciones, total] = await Promise.all([
             this.database.calificacion.findMany({
                 where: { idTecnico },
                 orderBy: { fechaCalificacion: 'desc' },
-                take: limit,
+                take: parsedLimit,
                 skip
             }),
             this.database.calificacion.count({ where: { idTecnico } })
@@ -169,9 +173,9 @@ export class CalificacionesService {
             calificaciones: calificaciones.map(c => CalificacionMapper.toInterface(c)),
             pagination: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
+                page: parsedPage,
+                limit: parsedLimit,
+                totalPages: Math.ceil(total / parsedLimit)
             }
         };
     }
