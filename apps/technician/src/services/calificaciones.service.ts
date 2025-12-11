@@ -38,7 +38,7 @@ export class CalificacionesService {
      */
     async create(
         createCalificacionDto: CreateCalificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const { idSolicitud, idTecnico, puntaje } = createCalificacionDto;
 
@@ -97,7 +97,7 @@ export class CalificacionesService {
     async update(
         idCalificacion: number,
         updateCalificacionDto: UpdateCalificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const calificacion = await this.database.calificacion.findUnique({
             where: { idCalificacion }
@@ -112,7 +112,7 @@ export class CalificacionesService {
             (Date.now() - calificacion.fechaCalificacion.getTime()) / (1000 * 60 * 60 * 24)
         );
 
-        if (diasTranscurridos > 7 && currentUser.rol !== RolUsuario.ADMIN) {
+        if (diasTranscurridos > 7 && !currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new BadRequestException('No se pueden actualizar calificaciones después de 7 días');
         }
 
@@ -153,13 +153,17 @@ export class CalificacionesService {
             page = 1
         } = filterDto || {};
 
-        const skip = (page - 1) * limit;
+        // Convert query parameters (strings) to numbers for Prisma
+        const parsedLimit = Number(limit) || 20;
+        const parsedPage = Number(page) || 1;
+
+        const skip = (parsedPage - 1) * parsedLimit;
 
         const [calificaciones, total] = await Promise.all([
             this.database.calificacion.findMany({
                 where: { idTecnico },
                 orderBy: { fechaCalificacion: 'desc' },
-                take: limit,
+                take: parsedLimit,
                 skip
             }),
             this.database.calificacion.count({ where: { idTecnico } })
@@ -169,9 +173,9 @@ export class CalificacionesService {
             calificaciones: calificaciones.map(c => CalificacionMapper.toInterface(c)),
             pagination: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
+                page: parsedPage,
+                limit: parsedLimit,
+                totalPages: Math.ceil(total / parsedLimit)
             }
         };
     }

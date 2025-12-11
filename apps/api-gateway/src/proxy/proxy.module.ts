@@ -6,6 +6,7 @@ import { MicroserviceProxyService } from './services/microservice-proxy.service'
 import { AuthProxyService } from './services/auth-proxy.service';
 import { GeoProxyService } from './services/geo-proxy.service';
 import { TechnicianProxyService } from './services/technician-proxy.service';
+import { CatalogProxyService } from './services/catalog-proxy.service';
 import { RequestProxyService } from './services/request-proxy.service';
 import { PaymentProxyService } from './services/payment-proxy.service';
 import { NotificationProxyService } from './services/notification-proxy.service';
@@ -86,6 +87,7 @@ import { NotificationProxyService } from './services/notification-proxy.service'
         AuthProxyService,
         GeoProxyService,
         TechnicianProxyService,
+        CatalogProxyService,
         RequestProxyService,
         PaymentProxyService,
         NotificationProxyService,
@@ -95,6 +97,7 @@ import { NotificationProxyService } from './services/notification-proxy.service'
         AuthProxyService,
         GeoProxyService,
         TechnicianProxyService,
+        CatalogProxyService,
         RequestProxyService,
         PaymentProxyService,
         NotificationProxyService,

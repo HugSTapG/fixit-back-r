@@ -77,7 +77,7 @@ export class TecnicosCertificacionesService {
     async create(
         idTecnico: number,
         createTecnicoCertificacionDto: CreateTecnicoCertificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         try {
             this.logger.log(`Creating certification for technician: ${idTecnico}`);
@@ -94,7 +94,7 @@ export class TecnicosCertificacionesService {
             }
 
             // Verificar permisos - solo el técnico propietario o admin
-            if (currentUser.rol !== RolUsuario.ADMIN && tecnico.idUser !== currentUser.idUser) {
+            if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
                 throw new ForbiddenException('No tienes permisos para asignar certificaciones a este técnico');
             }
 
@@ -158,7 +158,7 @@ export class TecnicosCertificacionesService {
     async update(
         idTecCert: number,
         updateTecnicoCertificacionDto: UpdateTecnicoCertificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         try {
             this.logger.log(`Updating technician certification: ${idTecCert}`);
@@ -166,7 +166,7 @@ export class TecnicosCertificacionesService {
             const tecnicoCertificacion = await this.findOne(idTecCert);
 
             // Verificar permisos
-            if (currentUser.rol !== RolUsuario.ADMIN && tecnicoCertificacion.tecnico.idUser !== currentUser.idUser) {
+            if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnicoCertificacion.tecnico.idUser !== currentUser.idUser) {
                 throw new ForbiddenException('No tienes permisos para actualizar esta certificación');
             }
 
@@ -379,9 +379,12 @@ export class TecnicosCertificacionesService {
     /**
      * Obtiene certificaciones verificadas
      */
-    async findVerified(limit?: number) {
+    async findVerified(limit?: number | string) {
         try {
             this.logger.log('Fetching verified certifications');
+            
+            // Convert query parameter (string) to number for Prisma
+            const parsedLimit = Number(limit) || 20;
             
             return await this.databaseService.tecnicoCertificacion.findMany({
                 where: {
@@ -394,7 +397,7 @@ export class TecnicosCertificacionesService {
                 orderBy: {
                     fechaObtencion: 'desc'
                 },
-                take: limit
+                take: parsedLimit
             });
         } catch (error) {
             this.logger.error('Error fetching verified certifications', error.stack);
@@ -632,7 +635,7 @@ export class TecnicosCertificacionesService {
     async renovarCertificacion(
         idTecCert: number,
         createTecnicoCertificacionDto: CreateTecnicoCertificacionDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         try {
             this.logger.log(`Renewing certification: ${idTecCert}`);
@@ -649,7 +652,7 @@ export class TecnicosCertificacionesService {
             }
 
             // Verificar permisos
-            if (currentUser.rol !== RolUsuario.ADMIN && tecnico.idUser !== currentUser.idUser) {
+            if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
                 throw new ForbiddenException('No tienes permisos para renovar esta certificación');
             }
 

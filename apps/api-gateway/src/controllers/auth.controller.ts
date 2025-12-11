@@ -10,6 +10,13 @@ export class AuthController {
     constructor(private readonly authProxyService: AuthProxyService) { }
 
     @Public()
+    @Post('register')
+    @HttpCode(201)
+    register(@Body() createUsuarioDto: any): Observable<any> {
+        return this.authProxyService.createUser(createUsuarioDto);
+    }
+
+    @Public()
     @Post('login')
     @HttpCode(200)
     login(@Body() loginDto: any): Observable<any> {
@@ -34,5 +41,21 @@ export class AuthController {
         }
 
         return this.authProxyService.logout(token);
+    }
+
+    @Post('switch-role')
+    @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
+    switchRole(
+        @Request() req: any,
+        @Body() body: { nuevoRol: string },
+    ): Observable<any> {
+        const userId = req.user.idUser;
+
+        if (!userId) {
+            throw new Error('User ID not found in token');
+        }
+
+        return this.authProxyService.switchRole(userId, body);
     }
 }

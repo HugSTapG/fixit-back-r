@@ -72,9 +72,9 @@ export class TiposServiciosService {
      */
     async create(
         createTipoServicioDto: CreateTipoServicioDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden crear tipos de servicios');
         }
 
@@ -101,9 +101,9 @@ export class TiposServiciosService {
     async update(
         idTipoServicio: number,
         updateTipoServicioDto: UpdateTipoServicioDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden actualizar tipos de servicios');
         }
 
@@ -131,9 +131,9 @@ export class TiposServiciosService {
      */
     async remove(
         idTipoServicio: number,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden eliminar tipos de servicios');
         }
 

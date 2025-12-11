@@ -22,6 +22,7 @@ import { GeoController } from './controllers/geo.controller';
 import { HealthController } from './health/health.controller';
 import { UsuariosController } from './controllers/usuarios.controller';
 import { TechnicianController } from './controllers/technician.controller';
+import { CatalogController } from './controllers/catalog.controller';
 import { RequestController } from './controllers/request.controller';
 import { PaymentController } from './controllers/payment.controller';
 import { NotificationController } from './controllers/notification.controller';
@@ -138,6 +139,8 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
 
     // Geo controllers
     GeoController,
+    // Catalog controller
+    CatalogController,
 
     // Technician controller
     TechnicianController,
@@ -159,11 +162,7 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
+    }
   ],
 })
 export class ApiModule {

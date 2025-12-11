@@ -41,6 +41,10 @@ export class TecnicosService {
             page = 1
         } = filterDto || {};
 
+        // Convert query parameters (strings) to numbers for Prisma
+        const parsedLimit = Number(limit) || 20;
+        const parsedPage = Number(page) || 1;
+
         const where: any = {};
 
         if (isActive !== undefined) {
@@ -72,7 +76,7 @@ export class TecnicosService {
             };
         }
 
-        const skip = (page - 1) * limit;
+        const skip = (parsedPage - 1) * parsedLimit;
 
         const [tecnicos, total] = await Promise.all([
             this.database.tecnico.findMany({
@@ -103,7 +107,7 @@ export class TecnicosService {
                     { promedioCalificaciones: 'desc' },
                     { totalCalificaciones: 'desc' }
                 ],
-                take: limit,
+                take: parsedLimit,
                 skip
             }),
             this.database.tecnico.count({ where })
@@ -113,9 +117,9 @@ export class TecnicosService {
             tecnicos: tecnicos.map(t => TecnicoMapper.toInterface(t)),
             pagination: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
+                page: parsedPage,
+                limit: parsedLimit,
+                totalPages: Math.ceil(total / parsedLimit)
             }
         };
     }
@@ -234,12 +238,12 @@ export class TecnicosService {
     async update(
         idTecnico: number,
         updateTecnicoDto: UpdateTecnicoDto,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         const tecnico = await this.findOne(idTecnico);
 
         // Verificar permisos (la validación se hace aquí)
-        if (currentUser.rol !== RolUsuario.ADMIN && tecnico.idUser !== currentUser.idUser) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
             throw new ForbiddenException('No tienes permisos para actualizar este técnico');
         }
 
@@ -273,10 +277,10 @@ export class TecnicosService {
      */
     async deactivate(
         idTecnico: number,
-        currentUser: { idUser: number; rol: RolUsuario }
+        currentUser: { idUser: number; roles: RolUsuario[] }
     ) {
         // Solo admin puede desactivar técnicos
-        if (currentUser.rol !== RolUsuario.ADMIN) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
             throw new ForbiddenException('Solo los administradores pueden desactivar técnicos');
         }
 
@@ -322,7 +326,10 @@ export class TecnicosService {
     /**
      * Obtiene técnicos mejor calificados
      */
-    async getTopRated(limit: number = 10) {
+    async getTopRated(limit?: number | string) {
+        // Convert query parameter (string) to number for Prisma
+        const parsedLimit = Number(limit) || 10;
+        
         const tecnicos = await this.database.tecnico.findMany({
             where: {
                 isActive: true,
@@ -344,7 +351,7 @@ export class TecnicosService {
                 { promedioCalificaciones: 'desc' },
                 { totalCalificaciones: 'desc' }
             ],
-            take: limit
+            take: parsedLimit
         });
 
         return tecnicos.map(t => TecnicoMapper.toInterface(t));
@@ -497,5 +504,111 @@ export class TecnicosService {
         });
 
         return { promedio, total: calificaciones.length };
+    }
+
+    /**
+     * Envía una solicitud de verificación del técnico
+     * Cambia el status a VERIFICACION_PENDIENTE
+     */
+    async submitVerification(idTecnico: number, currentUser: { idUser: number; roles: RolUsuario[] }) {
+        const tecnico = await this.findOne(idTecnico);
+
+        // Verificar que el usuario puede hacer esto (el técnico o un admin)
+        if (!currentUser.roles.includes(RolUsuario.ADMIN) && tecnico.idUser !== currentUser.idUser) {
+            throw new ForbiddenException('No tienes permisos para enviar verificación para este técnico');
+        }
+
+        // Actualizar estado a VERIFICACION_PENDIENTE
+        const updatedTecnico = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: 'VERIFICACION_PENDIENTE',
+                updatedBy: currentUser.idUser,
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.verification_submitted', {
+            idTecnico,
+            idUser: tecnico.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(updatedTecnico);
+    }
+
+    /**
+     * Aprueba la verificación de un técnico (solo admins)
+     * Cambia el status a VERIFICADO
+     */
+    async approveVerification(idTecnico: number, currentUser: { idUser: number; roles: RolUsuario[] }) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
+            throw new ForbiddenException('Solo los administradores pueden aprobar verificaciones');
+        }
+
+        const tecnico = await this.findOne(idTecnico);
+
+        const updatedTecnico = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: 'VERIFICADO',
+                updatedBy: currentUser.idUser,
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.verified', {
+            idTecnico,
+            idUser: tecnico.idUser,
+            approvedBy: currentUser.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(updatedTecnico);
+    }
+
+    /**
+     * Rechaza la verificación de un técnico (solo admins)
+     * Cambia el status de vuelta a REGISTRADO
+     */
+    async rejectVerification(idTecnico: number, currentUser: { idUser: number; roles: RolUsuario[] }) {
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
+            throw new ForbiddenException('Solo los administradores pueden rechazar verificaciones');
+        }
+
+        const tecnico = await this.findOne(idTecnico);
+
+        const updatedTecnico = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: 'REGISTRADO',
+                updatedBy: currentUser.idUser,
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.verification_rejected', {
+            idTecnico,
+            idUser: tecnico.idUser,
+            rejectedBy: currentUser.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(updatedTecnico);
     }
 }

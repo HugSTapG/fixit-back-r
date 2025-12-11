@@ -7,6 +7,7 @@ import { UsuariosService } from './usuarios.service';
 import { LoginDto, RefreshTokenDto, AuthResponseDto } from '../dto';
 import { SesionMapper } from '../mappers';
 import { firstValueFrom } from 'rxjs';
+import { RolUsuario } from '@app/shared';
 
 @Injectable()
 export class AuthService {
@@ -50,7 +51,7 @@ export class AuthService {
             email: user.email,
             nombres: user.nombres,
             apellidos: user.apellidos,
-            rol: user.rol,
+            roles: user.roles || [RolUsuario.CLIENTE],  // Array de roles
         };
 
         const accessToken = this.jwtService.sign(payload, {
@@ -68,7 +69,7 @@ export class AuthService {
         this.publishAsync('user.logged_in', {
             userId: user.idUser,
             email: user.email,
-            rol: user.rol,
+            roles: user.roles || [RolUsuario.CLIENTE],
         });
 
         return {
@@ -80,7 +81,8 @@ export class AuthService {
                 nombres: user.nombres,
                 apellidos: user.apellidos,
                 email: user.email,
-                rol: user.rol,
+                roles: user.roles || [RolUsuario.CLIENTE],  // Array de roles
+                createdAt: user.createdAt.toISOString(),
             },
         };
     }
@@ -116,7 +118,7 @@ export class AuthService {
             email: user.email,
             nombres: user.nombres,
             apellidos: user.apellidos,
-            rol: user.rol,
+            roles: user.roles || [RolUsuario.CLIENTE],
         };
 
         const newAccessToken = this.jwtService.sign(newPayload, {
@@ -153,7 +155,8 @@ export class AuthService {
                 nombres: user.nombres,
                 apellidos: user.apellidos,
                 email: user.email,
-                rol: user.rol,
+                roles: user.roles || [RolUsuario.CLIENTE],
+                createdAt: user.createdAt.toISOString(),
             },
         };
     }

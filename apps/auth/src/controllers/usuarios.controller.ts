@@ -170,9 +170,9 @@ export class UsuariosController {
     async switchRole(@Payload() data: { userId: number } & SwitchRoleDto) {
         try {
             const { userId, ...switchRoleData } = data;
-            this.logger.log(`Switching role for user: ${userId}`);
-            const user = await this.usuariosService.switchRole(userId, switchRoleData);
-            return { success: true, data: user };
+            this.logger.log(`Switching role for user: ${userId} to role: ${switchRoleData.nuevoRol}`);
+            const result = await this.usuariosService.switchRole(userId, switchRoleData);
+            return { success: true, data: result };
         } catch (error) {
             this.logger.error(`Error switching role for user: ${data.userId}`, error.stack);
             return {

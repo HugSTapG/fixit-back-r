@@ -1,7 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { KafkaService } from '@app/events';
-import { CreateUsuarioDto, UpdateUsuarioDto, SwitchRoleDto } from '../dto';
+import { CreateUsuarioDto, UpdateUsuarioDto, SwitchRoleDto, AuthResponseDto } from '../dto';
 import { UsuarioSinPassword } from '../interfaces';
 import { UsuarioMapper } from '../mappers';
 import { RolUsuario } from '@app/shared';
@@ -9,9 +11,13 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuariosService {
+    private readonly logger = new Logger(UsuariosService.name);
+
     constructor(
         private readonly database: DatabaseService,
         private readonly kafkaService: KafkaService,
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) { }
 
     async findById(idUser: number): Promise<UsuarioSinPassword | null> {
@@ -92,7 +98,7 @@ export class UsuariosService {
         await this.kafkaService.publishEvent('user.created', {
             userId: user.idUser,
             email: user.email,
-            rol: user.rol,
+            roles: user.roles || [RolUsuario.CLIENTE],
             cedula: user.cedula,
         });
 
@@ -178,7 +184,7 @@ export class UsuariosService {
                 telefono: true,
                 direccion: true,
                 fechaNacimiento: true,
-                rol: true,
+                roles: true,
                 emailVerificado: true,
                 activo: true,
                 isActive: true,
@@ -197,7 +203,7 @@ export class UsuariosService {
             telefono: user.telefono || undefined,
             direccion: user.direccion || undefined,
             fechaNacimiento: user.fechaNacimiento || undefined,
-            rol: user.rol as RolUsuario,
+            roles: (user.roles || [RolUsuario.CLIENTE]) as RolUsuario[],
             emailVerificado: user.emailVerificado,
             activo: user.activo,
             isActive: user.isActive,
@@ -235,28 +241,115 @@ export class UsuariosService {
         return UsuarioMapper.toInterfaceSinPassword(updatedUser);
     }
 
-    async switchRole(userId: number, switchRoleDto: SwitchRoleDto): Promise<UsuarioSinPassword> {
+    async switchRole(userId: number, switchRoleDto: SwitchRoleDto): Promise<AuthResponseDto> {
+        // 1. Obtener usuario actual con sus roles
         const existingUser = await this.database.usuario.findUnique({
             where: { idUser: userId },
+            select: {
+                idUser: true,
+                cedula: true,
+                email: true,
+                nombres: true,
+                apellidos: true,
+                roles: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
 
         if (!existingUser) {
             throw new NotFoundException('Usuario no encontrado');
         }
 
+        // 2. Obtener array de roles actuales (siempre incluye CLIENTE por defecto)
+        const currentRoles = Array.isArray(existingUser.roles) 
+            ? existingUser.roles 
+            : [RolUsuario.CLIENTE];
+        
+        this.logger.log(`[switchRole] Usuario ${userId} tiene roles actuales:`, currentRoles);
+
+        // 3. Verificar si el nuevo rol ya existe en el array
+        const roleExists = currentRoles.includes(switchRoleDto.nuevoRol as RolUsuario);
+        if (roleExists) {
+            this.logger.log(`[switchRole] Rol ${switchRoleDto.nuevoRol} ya existe para usuario ${userId}`);
+            return this.generateAuthResponse(existingUser as any, currentRoles);
+        }
+
+        // 4. Agregar el nuevo rol al array (sin duplicados) - Los roles NUNCA se quitan
+        const updatedRoles = [...currentRoles, switchRoleDto.nuevoRol as RolUsuario];
+        this.logger.log(`[switchRole] Agregando rol ${switchRoleDto.nuevoRol} a usuario ${userId}. Nuevos roles:`, updatedRoles);
+
+        // 5. Actualizar usuario en la BD con el nuevo array de roles
         const updatedUser = await this.database.usuario.update({
             where: { idUser: userId },
-            data: { rol: switchRoleDto.nuevoRol },
+            data: { 
+                roles: updatedRoles,
+            },
+            select: {
+                idUser: true,
+                cedula: true,
+                email: true,
+                nombres: true,
+                apellidos: true,
+                roles: true,
+                createdAt: true,
+                updatedAt: true,
+            },
         });
 
-        // Emitir evento
+        this.logger.log(`[switchRole] Usuario ${userId} actualizado en BD. Roles guardados:`, updatedUser.roles);
+
+        // 6. Emitir evento de cambio de rol
         await this.kafkaService.publishEvent('user.role_switched', {
             userId,
-            oldRole: existingUser.rol,
-            newRole: switchRoleDto.nuevoRol,
+            previousRoles: currentRoles,
+            newRoles: updatedUser.roles,
+            addedRole: switchRoleDto.nuevoRol,
+            timestamp: new Date().toISOString(),
         });
 
-        return UsuarioMapper.toInterfaceSinPassword(updatedUser);
+        // 7. Generar y retornar nueva respuesta de autenticación con tokens
+        return this.generateAuthResponse(updatedUser as any, updatedUser.roles as RolUsuario[]);
+    }
+
+    /**
+     * Generar respuesta de autenticación con todos los roles
+     */
+    private generateAuthResponse(
+        user: any,
+        roles: any[],
+    ): AuthResponseDto {
+        const payload = {
+            sub: user.idUser,
+            cedula: user.cedula,
+            email: user.email,
+            nombres: user.nombres,
+            apellidos: user.apellidos,
+            roles: roles as RolUsuario[], // Array de roles en el token
+        };
+
+        const accessToken = this.jwtService.sign(payload, {
+            expiresIn: this.configService.get('JWT_EXPIRES_IN', '15m'),
+        });
+
+        const refreshToken = this.jwtService.sign(payload, {
+            secret: this.configService.get('JWT_REFRESH_SECRET'),
+            expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+        });
+
+        return {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            user: {
+                idUser: user.idUser,
+                cedula: user.cedula,
+                nombres: user.nombres,
+                apellidos: user.apellidos,
+                email: user.email,
+                roles: roles as RolUsuario[], // Array de roles en user
+                createdAt: user.createdAt.toISOString(),
+            },
+        };
     }
 
     private validarCedulaEcuatoriana(cedula: string): { esValida: boolean; mensaje: string } {

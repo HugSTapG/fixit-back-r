@@ -29,36 +29,65 @@ export class SolicitudesService {
             codigoParroquia,
             promocion,
             idUser,
-            limit = 20,
-            page = 1
+            limit,
+            page
         } = filterDto || {};
+
+        // Microservice payloads arrive deserialised, so we normalise primitives before hitting Prisma.
+        const parseNumber = (value?: unknown): number | undefined => {
+            if (value === null || value === undefined) {
+                return undefined;
+            }
+            const numeric = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
+            return Number.isNaN(numeric) ? undefined : numeric;
+        };
+
+        const parseBoolean = (value?: unknown): boolean | undefined => {
+            if (value === null || value === undefined) {
+                return undefined;
+            }
+            if (typeof value === 'boolean') {
+                return value;
+            }
+            if (typeof value === 'string') {
+                const normalized = value.trim().toLowerCase();
+                if (normalized === 'true') return true;
+                if (normalized === 'false') return false;
+            }
+            return undefined;
+        };
+
+        const sanitizedLimit = Math.max(parseNumber(limit) ?? 20, 1);
+        const sanitizedPage = Math.max(parseNumber(page) ?? 1, 1);
 
         const where: any = {
             isActive: true
         };
 
-        // Aplicar filtros
         if (estadoSolicitud) {
             where.estadoSolicitud = estadoSolicitud;
         }
 
-        if (idTipoServicio) {
-            where.idTipoServicio = idTipoServicio;
+        const parsedTipoServicio = parseNumber(idTipoServicio);
+        if (parsedTipoServicio !== undefined) {
+            where.idTipoServicio = parsedTipoServicio;
         }
 
         if (codigoParroquia) {
             where.codigoParroquia = codigoParroquia;
         }
 
-        if (promocion !== undefined) {
-            where.promocion = promocion;
+        const parsedPromocion = parseBoolean(promocion);
+        if (parsedPromocion !== undefined) {
+            where.promocion = parsedPromocion;
         }
 
-        if (idUser) {
-            where.idUser = idUser;
+        const parsedIdUser = parseNumber(idUser);
+        if (parsedIdUser !== undefined) {
+            where.idUser = parsedIdUser;
         }
 
-        const skip = (page - 1) * limit;
+        const skip = (sanitizedPage - 1) * sanitizedLimit;
 
         const [solicitudes, total] = await Promise.all([
             this.database.solicitud.findMany({
@@ -74,7 +103,7 @@ export class SolicitudesService {
                 orderBy: {
                     fechaPublicacion: 'desc'
                 },
-                take: limit,
+                take: sanitizedLimit,
                 skip
             }),
             this.database.solicitud.count({ where })
@@ -84,9 +113,9 @@ export class SolicitudesService {
             solicitudes,
             pagination: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
+                page: sanitizedPage,
+                limit: sanitizedLimit,
+                totalPages: Math.ceil(total / sanitizedLimit)
             }
         };
     }

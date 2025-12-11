@@ -1,6 +1,7 @@
 export interface Tecnico {
     idTecnico: number;
     idUser: number;
+    status: string;  // REGISTRADO, VERIFICACION_PENDIENTE, VERIFICADO, BLOQUEADO
     totalCalificaciones: number;
     promedioCalificaciones?: number;
     isActive: boolean;
