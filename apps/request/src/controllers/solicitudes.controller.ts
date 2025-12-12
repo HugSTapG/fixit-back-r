@@ -132,4 +132,20 @@ export class SolicitudesController {
             };
         }
     }
+
+    @MessagePattern(REQUEST_PATTERNS.FIND_AVAILABLE_FOR_TECHNICIANS)
+    async findAvailableForTechnicians(@Payload() data: { filterDto?: any }) {
+        try {
+            this.logger.log('Getting available solicitudes for technicians');
+            const result = await this.solicitudesService.findAvailableForTechnicians(data.filterDto);
+            return { success: true, data: result };
+        } catch (error) {
+            this.logger.error('Error getting available solicitudes for technicians', error.stack);
+            return {
+                success: false,
+                error: error.message,
+                statusCode: error.status || 500
+            };
+        }
+    }
 }

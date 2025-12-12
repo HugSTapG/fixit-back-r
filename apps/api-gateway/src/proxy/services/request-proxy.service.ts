@@ -41,6 +41,10 @@ export class RequestProxyService extends MicroserviceProxyService {
         return this.sendToRequest(REQUEST_PATTERNS.GET_SOLICITUDES_STATS, { idUser });
     }
 
+    findAvailableForTechnicians(filterDto?: any): Observable<any> {
+        return this.sendToRequest(REQUEST_PATTERNS.FIND_AVAILABLE_FOR_TECHNICIANS, { filterDto });
+    }
+
     // === SOLICITUDES-TECNICOS ===
     findAllSolicitudesTecnicos(): Observable<any> {
         return this.sendToRequest(REQUEST_PATTERNS.FIND_ALL_SOLICITUDES_TECNICOS, {});

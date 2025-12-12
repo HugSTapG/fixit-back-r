@@ -8,6 +8,7 @@ export const REQUEST_PATTERNS = {
     DELETE_SOLICITUD: 'request.solicitudes.delete',
     FIND_SOLICITUDES_BY_USER: 'request.solicitudes.findByUser',
     GET_SOLICITUDES_STATS: 'request.solicitudes.getStats',
+    FIND_AVAILABLE_FOR_TECHNICIANS: 'request.solicitudes.findAvailableForTechnicians',
 
     // Solicitudes-Tecnicos
     FIND_ALL_SOLICITUDES_TECNICOS: 'request.solicitudesTecnicos.findAll',

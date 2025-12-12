@@ -97,6 +97,23 @@ export class RequestController {
     }
 
     /**
+     * 🔑 NUEVO ENDPOINT: Obtiene solicitudes disponibles para técnicos
+     * MVP DEFINITION:
+     * Una solicitud es visible si: estadoSolicitud = PENDIENTE AND idTecnicoAsignado IS NULL
+     * 
+     * Basado en modelo Uber/InDriver
+     */
+    @Get('solicitudes/available/technicians')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(RolUsuario.TECNICO)
+    findAvailableForTechnicians(
+        @Request() req: any,
+        @Query() filterDto: any
+    ): Observable<any> {
+        return this.requestProxyService.findAvailableForTechnicians(filterDto);
+    }
+
+    /**
      * Crea una nueva solicitud de servicio
      */
     @Post('solicitudes')

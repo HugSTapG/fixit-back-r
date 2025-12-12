@@ -329,4 +329,88 @@ export class SolicitudesService {
             }
         };
     }
+
+    /**
+     * 🔑 MÉTODO CLAVE: Obtiene solicitudes disponibles para un técnico
+     * 
+     * MVP DEFINITION:
+     * Una solicitud es visible para técnicos si:
+     *   ✅ estadoSolicitud = PENDIENTE
+     *   ✅ idTecnicoAsignado IS NULL (no tiene técnico asignado)
+     *   ✅ isActive = true
+     * 
+     * NO FILTRAR POR:
+     *   ❌ SolicitudTecnico (no importa si tiene propuestas)
+     *   ❌ idTecnico (no excluir propias propuestas)
+     * 
+     * BASADO EN: Uber/InDriver model - técnicos ven todas las solicitudes sin asignar
+     */
+    async findAvailableForTechnicians(filterDto?: {
+        idTipoServicio?: number;
+        codigoParroquia?: string;
+        limit?: number;
+        page?: number;
+    }) {
+        const { idTipoServicio, codigoParroquia, limit = 20, page = 1 } = filterDto || {};
+
+        // WHERE: Solo solicitudes PENDIENTE sin técnico asignado
+        const where: any = {
+            isActive: true,
+            estadoSolicitud: EstadoSolicitud.PENDIENTE,
+            idTecnicoAsignado: null,  // 🔑 CRÍTICO: Solo sin asignar
+        };
+
+        if (idTipoServicio) {
+            where.idTipoServicio = idTipoServicio;
+        }
+        if (codigoParroquia) {
+            where.codigoParroquia = codigoParroquia;
+        }
+
+        const sanitizedLimit = Math.max(limit, 1);
+        const sanitizedPage = Math.max(page, 1);
+        const skip = (sanitizedPage - 1) * sanitizedLimit;
+
+        const [solicitudes, total] = await Promise.all([
+            this.database.solicitud.findMany({
+                where,
+                select: {
+                    idSolicitud: true,
+                    idUser: true,
+                    idTipoServicio: true,
+                    codigoParroquia: true,
+                    tituloProblema: true,
+                    descripcionProblema: true,
+                    costoEstimado: true,
+                    costoPromocion: true,
+                    promocion: true,
+                    estadoSolicitud: true,
+                    fechaProgramada: true,
+                    duracionEstimadaMin: true,
+                    fechaPublicacion: true,
+                    _count: {
+                        select: {
+                            solicitudesTecnico: true,
+                        }
+                    }
+                },
+                orderBy: {
+                    fechaPublicacion: 'desc'
+                },
+                take: sanitizedLimit,
+                skip
+            }),
+            this.database.solicitud.count({ where })
+        ]);
+
+        return {
+            solicitudes,
+            pagination: {
+                total,
+                page: sanitizedPage,
+                limit: sanitizedLimit,
+                totalPages: Math.ceil(total / sanitizedLimit)
+            }
+        };
+    }
 }
