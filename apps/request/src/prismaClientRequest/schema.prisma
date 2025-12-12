@@ -49,6 +49,7 @@ model Solicitud {
   idUser               Int             // Referencia a user del microservicio Auth
   idTipoServicio       Int             // Referencia a tipo servicio del microservicio Technician
   codigoParroquia      String          // Referencia a parroquia del microservicio Geo
+  idTecnicoAsignado    Int?            // Técnico asignado al aceptar propuesta
   tituloProblema       String          @db.VarChar(100)
   descripcionProblema  String          @db.Text
   costoEstimado        Decimal?        @db.Decimal(10, 2)

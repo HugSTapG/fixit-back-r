@@ -181,11 +181,12 @@ export class SolicitudesTecnicosService {
 
             // Si se acepta la propuesta, actualizar el estado de la solicitud y rechazar otras propuestas
             if (estadoAcuerdo === EstadoAceptacion.ACEPTADO) {
-                // Actualizar la solicitud a ACEPTADA
+                // Actualizar la solicitud a ACEPTADA y asignar técnico
                 await prisma.solicitud.update({
                     where: { idSolicitud: propuesta.idSolicitud },
                     data: {
                         estadoSolicitud: EstadoSolicitud.ACEPTADA,
+                        idTecnicoAsignado: propuesta.idTecnico,
                         updatedBy: currentUser.idUser
                     }
                 });
