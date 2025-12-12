@@ -56,6 +56,26 @@ export class RequestController {
     }
 
     /**
+     * 🔑 ENDPOINT: Obtiene solicitudes disponibles para técnicos
+     * MVP DEFINITION:
+     * Una solicitud es visible si: estadoSolicitud = PENDIENTE AND idTecnicoAsignado IS NULL
+     * 
+     * Basado en modelo Uber/InDriver
+     */
+    @Get('solicitudes/available/technicians')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(RolUsuario.TECNICO)
+    @Header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    @Header('Pragma', 'no-cache')
+    @Header('Expires', '0')
+    findAvailableForTechnicians(
+        @Request() req: any,
+        @Query() filterDto: any
+    ): Observable<any> {
+        return this.requestProxyService.findAvailableForTechnicians(filterDto, req.user);
+    }
+
+    /**
      * Obtiene las solicitudes del usuario actual
      */
     @Get('solicitudes/my/solicitudes')
@@ -95,26 +115,6 @@ export class RequestController {
             ...(estado && { estadoSolicitud: estado }),
             rol: req.user.rol
         });
-    }
-
-    /**
-     * 🔑 NUEVO ENDPOINT: Obtiene solicitudes disponibles para técnicos
-     * MVP DEFINITION:
-     * Una solicitud es visible si: estadoSolicitud = PENDIENTE AND idTecnicoAsignado IS NULL
-     * 
-     * Basado en modelo Uber/InDriver
-     */
-    @Get('solicitudes/available/technicians')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(RolUsuario.TECNICO)
-    @Header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-    @Header('Pragma', 'no-cache')
-    @Header('Expires', '0')
-    findAvailableForTechnicians(
-        @Request() req: any,
-        @Query() filterDto: any
-    ): Observable<any> {
-        return this.requestProxyService.findAvailableForTechnicians(filterDto, req.user);
     }
 
     /**
