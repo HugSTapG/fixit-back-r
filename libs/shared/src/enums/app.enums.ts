@@ -61,3 +61,13 @@ export enum EstadoPago {
     PAGADO = 'PAGADO',
     FALLIDO = 'FALLIDO',
 }
+
+/**
+ * Patrones de eventos para microservicios (RabbitMQ)
+ */
+export const NOTIFICATION_PATTERNS = {
+    CREATE_NOTIFICACION: 'notificacion.create',
+    UPDATE_NOTIFICACION: 'notificacion.update',
+    GET_NOTIFICACIONES: 'notificacion.getByUser',
+    MARK_SEEN: 'notificacion.markSeen',
+} as const;

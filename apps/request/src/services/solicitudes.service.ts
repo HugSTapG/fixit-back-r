@@ -2,7 +2,8 @@ import {
     Injectable,
     NotFoundException,
     BadRequestException,
-    ForbiddenException
+    ForbiddenException,
+    Logger
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import {
@@ -17,6 +18,8 @@ import { EstadoSolicitud, RolUsuario } from '@app/shared';
  */
 @Injectable()
 export class SolicitudesService {
+    private readonly logger = new Logger(SolicitudesService.name);
+
     constructor(private readonly database: DatabaseService) { }
 
     /**
