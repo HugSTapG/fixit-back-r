@@ -3,8 +3,11 @@ import {
     NotFoundException,
     BadRequestException,
     ForbiddenException,
-    ConflictException
+    ConflictException,
+    Optional
 } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { DatabaseService } from '../database/database.service';
 import type { PrismaClient } from '../prismaClientRequest/generated';
 import {
@@ -12,14 +15,19 @@ import {
     UpdateSolicitudTecnicoDto,
     ResponderSolicitudDto
 } from '../dto/solicitud-tecnico.dto';
-import { EstadoAceptacion, EstadoSolicitud } from '@app/shared';
+import { EstadoAceptacion, EstadoSolicitud, NOTIFICATION_PATTERNS } from '@app/shared';
 
 /**
  * Servicio para la gestión de propuestas técnico-solicitud
  */
 @Injectable()
 export class SolicitudesTecnicosService {
-    constructor(private readonly database: DatabaseService) { }
+    private readonly logger = new Logger(SolicitudesTecnicosService.name);
+
+    constructor(
+        private readonly database: DatabaseService,
+        @Optional() private notificationClient?: ClientProxy
+    ) { }
 
     /**
      * Normaliza roles a array (maneja tanto string como array)
@@ -130,7 +138,7 @@ export class SolicitudesTecnicosService {
             throw new ConflictException('Ya te has postulado a esta solicitud');
         }
 
-        return this.database.solicitudTecnico.create({
+        const propuesta = await this.database.solicitudTecnico.create({
             data: {
                 idSolicitud,
                 idTecnico,
@@ -142,6 +150,28 @@ export class SolicitudesTecnicosService {
                 solicitud: true
             }
         });
+
+        // 🔔 Trigger: Enviar notificación al cliente (propietario de la solicitud) - NO BLOQUEANTE
+        if (this.notificationClient) {
+            setImmediate(() => {
+                try {
+                    this.notificationClient?.emit(NOTIFICATION_PATTERNS.CREATE_NOTIFICACION, {
+                        createNotificacionDto: {
+                            idUser: solicitud.idUser,
+                            titulo: 'Nueva Propuesta Recibida',
+                            mensaje: `Técnico ha enviado una propuesta de $${createDto.costoAcordado?.toFixed(2) || '0.00'} para tu solicitud "${solicitud.tituloProblema}"`,
+                            tipoNotificacion: 'PROPUESTA_RECIBIDA'
+                        }
+                    }).subscribe({
+                        error: (err) => this.logger.warn(`[postularse] Notification error (non-blocking): ${err.message}`)
+                    });
+                } catch (err: any) {
+                    this.logger.warn(`[postularse] Notification trigger failed (non-blocking): ${err.message}`);
+                }
+            });
+        }
+
+        return propuesta;
     }
 
     /**
@@ -170,9 +200,9 @@ export class SolicitudesTecnicosService {
         };
 
         // Usar transacción para actualizar tanto la propuesta como la solicitud si es necesario
-        return this.database.$transaction(async (prisma: PrismaClient) => {
+        const propuestaActualizada = await this.database.$transaction(async (prisma: PrismaClient) => {
             // Actualizar la propuesta
-            const propuestaActualizada = await prisma.solicitudTecnico.update({
+            const propuestaUpdated = await prisma.solicitudTecnico.update({
                 where: { idSolTec },
                 data: updateData,
                 include: {
@@ -193,7 +223,7 @@ export class SolicitudesTecnicosService {
                 });
 
                 // Rechazar automáticamente otras propuestas pendientes
-                await prisma.solicitudTecnico.updateMany({
+                const otrasRechazadas = await prisma.solicitudTecnico.updateMany({
                     where: {
                         idSolicitud: propuesta.idSolicitud,
                         idSolTec: { not: idSolTec },
@@ -204,10 +234,73 @@ export class SolicitudesTecnicosService {
                         fechaConfirmada: new Date()
                     }
                 });
+
+                // 🔔 Trigger: Notificación al técnico aceptado - NO BLOQUEANTE
+                if (this.notificationClient) {
+                    setImmediate(() => {
+                        try {
+                            this.notificationClient?.emit(NOTIFICATION_PATTERNS.CREATE_NOTIFICACION, {
+                                createNotificacionDto: {
+                                    idUser: propuesta.solicitud.idUser,
+                                    titulo: '¡Propuesta Aceptada!',
+                                    mensaje: `Tu propuesta de $${costoAcordado?.toFixed(2) || '0.00'} para "${propuesta.solicitud.tituloProblema}" ha sido aceptada. ¡Comienza el trabajo!`,
+                                    tipoNotificacion: 'PROPUESTA_ACEPTADA'
+                                }
+                            }).subscribe({
+                                error: (err) => this.logger.warn(`[responder ACEPTADO] Notification error (non-blocking): ${err.message}`)
+                            });
+                        } catch (err: any) {
+                            this.logger.warn(`[responder ACEPTADO] Notification trigger failed (non-blocking): ${err.message}`);
+                        }
+                    });
+                }
+
+                // 🔔 Trigger: Notificaciones a técnicos rechazados - NO BLOQUEANTE
+                if (this.notificationClient && otrasRechazadas.count > 0) {
+                    setImmediate(() => {
+                        try {
+                            this.notificationClient?.emit(NOTIFICATION_PATTERNS.CREATE_NOTIFICACION, {
+                                createNotificacionDto: {
+                                    idUser: 0,
+                                    titulo: 'Propuesta Rechazada',
+                                    mensaje: `Tu propuesta para "${propuesta.solicitud.tituloProblema}" ha sido rechazada. El cliente eligió otra propuesta.`,
+                                    tipoNotificacion: 'PROPUESTA_RECHAZADA',
+                                    idSolicitud: propuesta.idSolicitud
+                                }
+                            }).subscribe({
+                                error: (err) => this.logger.warn(`[responder AUTO_RECHAZO] Notification error (non-blocking): ${err.message}`)
+                            });
+                        } catch (err: any) {
+                            this.logger.warn(`[responder AUTO_RECHAZO] Notification trigger failed (non-blocking): ${err.message}`);
+                        }
+                    });
+                }
+            } else if (estadoAcuerdo === EstadoAceptacion.RECHAZADO) {
+                // 🔔 Trigger: Notificación al técnico rechazado - NO BLOQUEANTE
+                if (this.notificationClient) {
+                    setImmediate(() => {
+                        try {
+                            this.notificationClient?.emit(NOTIFICATION_PATTERNS.CREATE_NOTIFICACION, {
+                                createNotificacionDto: {
+                                    idUser: propuesta.solicitud.idUser,
+                                    titulo: 'Propuesta Rechazada',
+                                    mensaje: `Tu propuesta para "${propuesta.solicitud.tituloProblema}" ha sido rechazada.`,
+                                    tipoNotificacion: 'PROPUESTA_RECHAZADA'
+                                }
+                            }).subscribe({
+                                error: (err) => this.logger.warn(`[responder MANUAL_RECHAZO] Notification error (non-blocking): ${err.message}`)
+                            });
+                        } catch (err: any) {
+                            this.logger.warn(`[responder MANUAL_RECHAZO] Notification trigger failed (non-blocking): ${err.message}`);
+                        }
+                    });
+                }
             }
 
-            return propuestaActualizada;
+            return propuestaUpdated;
         });
+
+        return propuestaActualizada;
     }
 
     /**
