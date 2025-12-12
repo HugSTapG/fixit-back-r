@@ -114,7 +114,7 @@ export class RequestController {
         @Request() req: any,
         @Query() filterDto: any
     ): Observable<any> {
-        return this.requestProxyService.findAvailableForTechnicians(filterDto);
+        return this.requestProxyService.findAvailableForTechnicians(filterDto, req.user);
     }
 
     /**

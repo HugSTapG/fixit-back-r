@@ -134,10 +134,10 @@ export class SolicitudesController {
     }
 
     @MessagePattern(REQUEST_PATTERNS.FIND_AVAILABLE_FOR_TECHNICIANS)
-    async findAvailableForTechnicians(@Payload() data: { filterDto?: any }) {
+    async findAvailableForTechnicians(@Payload() data: { filterDto?: any; currentUser?: any }) {
         try {
             this.logger.log('Getting available solicitudes for technicians');
-            const result = await this.solicitudesService.findAvailableForTechnicians(data.filterDto);
+            const result = await this.solicitudesService.findAvailableForTechnicians(data.filterDto, data.currentUser);
             return { success: true, data: result };
         } catch (error) {
             this.logger.error('Error getting available solicitudes for technicians', error.stack);

@@ -338,17 +338,20 @@ export class SolicitudesService {
      *   ✅ estadoSolicitud = 'PENDIENTE'
      *   ✅ idTecnicoAsignado IS NULL
      *   ✅ isActive = true
+     *   ✅ idUser != currentUser.idUser (multi-role protection: técnico no ve sus propias solicitudes como cliente)
      * 
      * NO FILTRAR POR:
      *   ❌ idTipoServicio
      *   ❌ codigoParroquia
-     *   ❌ currentUser
      *   ❌ SolicitudTecnico (propuestas no afectan visibilidad)
      *   ❌ idTecnico (no excluir propias propuestas)
      * 
-     * BASADO EN: Uber/InDriver - todos los técnicos ven todas las solicitudes sin asignar
+     * BASADO EN: Uber/InDriver - todos los técnicos ven todas las solicitudes sin asignar (excepto propias)
      */
-    async findAvailableForTechnicians(filterDto?: { limit?: number; page?: number }) {
+    async findAvailableForTechnicians(
+        filterDto?: { limit?: number; page?: number },
+        currentUser?: { idUser: number; roles?: string[] }
+    ) {
         const { limit = 20, page = 1 } = filterDto || {};
         
         // Validar inputs
@@ -356,11 +359,17 @@ export class SolicitudesService {
         const sanitizedPage = Math.max(1, page);
         const skip = (sanitizedPage - 1) * sanitizedLimit;
         
-        // MVP WHERE CLAUSE: 3 condiciones, sin más
+        // Log warning if currentUser missing (should not happen in normal flow)
+        if (!currentUser?.idUser) {
+            this.logger.warn('findAvailableForTechnicians called without currentUser.idUser - will show all solicitudes');
+        }
+        
+        // MVP WHERE CLAUSE: 4 condiciones (agregada protección multi-rol)
         const where = {
             estadoSolicitud: EstadoSolicitud.PENDIENTE,
             idTecnicoAsignado: null,
             isActive: true,
+            ...(currentUser?.idUser && { idUser: { not: currentUser.idUser } }),
         };
         
         // Ejecutar en paralelo
