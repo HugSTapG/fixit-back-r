@@ -13,8 +13,8 @@ export class RequestProxyService extends MicroserviceProxyService {
         return this.sendToRequest(REQUEST_PATTERNS.FIND_ALL_SOLICITUDES, { filterDto });
     }
 
-    findSolicitudById(idSolicitud: number): Observable<any> {
-        return this.sendToRequest(REQUEST_PATTERNS.FIND_SOLICITUD_BY_ID, { idSolicitud });
+    findSolicitudById(idSolicitud: number, currentUser?: any): Observable<any> {
+        return this.sendToRequest(REQUEST_PATTERNS.FIND_SOLICITUD_BY_ID, { idSolicitud, currentUser });
     }
 
     createSolicitud(createSolicitudDto: any, idUser: number): Observable<any> {
@@ -46,8 +46,8 @@ export class RequestProxyService extends MicroserviceProxyService {
         return this.sendToRequest(REQUEST_PATTERNS.FIND_ALL_SOLICITUDES_TECNICOS, {});
     }
 
-    findSolicitudTecnicoById(idSolTec: number): Observable<any> {
-        return this.sendToRequest(REQUEST_PATTERNS.FIND_SOLICITUD_TECNICO_BY_ID, { idSolTec });
+    findSolicitudTecnicoById(idSolTec: number, currentUser?: any): Observable<any> {
+        return this.sendToRequest(REQUEST_PATTERNS.FIND_SOLICITUD_TECNICO_BY_ID, { idSolTec, currentUser });
     }
 
     postularseSolicitud(createDto: any, idTecnico: number): Observable<any> {
@@ -58,8 +58,8 @@ export class RequestProxyService extends MicroserviceProxyService {
         return this.sendToRequest(REQUEST_PATTERNS.RESPONDER_SOLICITUD, { idSolTec, respuestaDto, currentUser });
     }
 
-    findSolicitudesBySolicitud(idSolicitud: number): Observable<any> {
-        return this.sendToRequest(REQUEST_PATTERNS.FIND_SOLICITUDES_BY_SOLICITUD, { idSolicitud });
+    findSolicitudesBySolicitud(idSolicitud: number, currentUser?: any): Observable<any> {
+        return this.sendToRequest(REQUEST_PATTERNS.FIND_SOLICITUDES_BY_SOLICITUD, { idSolicitud, currentUser });
     }
 
     findSolicitudesByTecnico(idTecnico: number): Observable<any> {

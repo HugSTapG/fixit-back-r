@@ -132,8 +132,9 @@ export class SolicitudesService {
 
     /**
      * Busca una solicitud por su ID
+     * P2a: Valida que el usuario tenga permisos para acceder
      */
-    async findOne(idSolicitud: number) {
+    async findOne(idSolicitud: number, currentUser?: { idUser: number; rol: string }) {
         const solicitud = await this.database.solicitud.findUnique({
             where: {
                 idSolicitud,
@@ -148,6 +149,11 @@ export class SolicitudesService {
 
         if (!solicitud) {
             throw new NotFoundException(`Solicitud con ID ${idSolicitud} no encontrada`);
+        }
+
+        // P2a: Verificar permisos (solo propietario o admin)
+        if (currentUser && currentUser.rol !== 'ADMIN' && solicitud.idUser !== currentUser.idUser) {
+            throw new ForbiddenException('No tienes permisos para acceder a esta solicitud');
         }
 
         return solicitud;
@@ -192,12 +198,7 @@ export class SolicitudesService {
         updateSolicitudDto: UpdateSolicitudDto,
         currentUser: { idUser: number; rol: string }
     ) {
-        const solicitud = await this.findOne(idSolicitud);
-
-        // Verificar permisos (solo propietario o admin)
-        if (currentUser.rol !== 'ADMIN' && solicitud.idUser !== currentUser.idUser) {
-            throw new ForbiddenException('No tienes permisos para actualizar esta solicitud');
-        }
+        const solicitud = await this.findOne(idSolicitud, currentUser);
 
         const {
             fechaProgramada,
@@ -231,12 +232,7 @@ export class SolicitudesService {
         idSolicitud: number,
         currentUser: { idUser: number; rol: string }
     ) {
-        const solicitud = await this.findOne(idSolicitud);
-
-        // Verificar permisos
-        if (currentUser.rol !== 'ADMIN' && solicitud.idUser !== currentUser.idUser) {
-            throw new ForbiddenException('No tienes permisos para cancelar esta solicitud');
-        }
+        const solicitud = await this.findOne(idSolicitud, currentUser);
 
         // Solo se puede cancelar si está pendiente o aceptada
         if (![EstadoSolicitud.PENDIENTE, EstadoSolicitud.ACEPTADA].includes(solicitud.estadoSolicitud as EstadoSolicitud)) {

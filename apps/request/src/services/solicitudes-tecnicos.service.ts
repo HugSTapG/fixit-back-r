@@ -22,6 +22,26 @@ export class SolicitudesTecnicosService {
     constructor(private readonly database: DatabaseService) { }
 
     /**
+     * Normaliza roles a array (maneja tanto string como array)
+     */
+    private normalizeRoles(user: any): string[] {
+        return user.roles ?? (user.rol ? [user.rol] : []);
+    }
+
+    /**
+     * Obtiene idTecnico desde currentUser (busca en DB si es necesario)
+     */
+    private async getIdTecnicoFromCurrentUser(currentUser: any): Promise<number | null> {
+        if (currentUser.idTecnico) return currentUser.idTecnico;
+        
+        const tecnico = await this.database.tecnico.findFirst({
+            where: { idUser: currentUser.idUser }
+        });
+        
+        return tecnico?.idTecnico || null;
+    }
+
+    /**
      * Obtiene todas las propuestas técnico-solicitud
      */
     async findAll() {
@@ -37,8 +57,9 @@ export class SolicitudesTecnicosService {
 
     /**
      * Busca una propuesta por ID
+     * P2b: Valida que el usuario tenga permisos (tecnico dueño, cliente dueño, o admin)
      */
-    async findOne(idSolTec: number) {
+    async findOne(idSolTec: number, currentUser?: any) {
         const propuesta = await this.database.solicitudTecnico.findUnique({
             where: { idSolTec },
             include: {
@@ -48,6 +69,25 @@ export class SolicitudesTecnicosService {
 
         if (!propuesta) {
             throw new NotFoundException(`Propuesta con ID ${idSolTec} no encontrada`);
+        }
+
+        // P2b: Validar permisos multi-rol
+        if (currentUser) {
+            const roles = this.normalizeRoles(currentUser);
+            const isAdmin = roles.includes('ADMIN');
+            
+            if (!isAdmin) {
+                // Verificar si es tecnico dueño
+                const idTecnicoActual = await this.getIdTecnicoFromCurrentUser(currentUser);
+                const isTecnicoDueno = propuesta.idTecnico === idTecnicoActual;
+                
+                // Verificar si es cliente dueño de la solicitud
+                const isClienteDueno = propuesta.solicitud.idUser === currentUser.idUser;
+                
+                if (!isTecnicoDueno && !isClienteDueno) {
+                    throw new ForbiddenException('No tienes permisos para acceder a esta propuesta');
+                }
+            }
         }
 
         return propuesta;
@@ -111,12 +151,7 @@ export class SolicitudesTecnicosService {
         respuestaDto: ResponderSolicitudDto,
         currentUser: { idUser: number; rol: string }
     ) {
-        const propuesta = await this.findOne(idSolTec);
-
-        // Verificar que el usuario actual es el dueño de la solicitud o admin
-        if (currentUser.rol !== 'ADMIN' && propuesta.solicitud.idUser !== currentUser.idUser) {
-            throw new ForbiddenException('No tienes permisos para responder a esta propuesta');
-        }
+        const propuesta = await this.findOne(idSolTec, currentUser);
 
         // Solo se puede responder a propuestas en estado PROPUESTO
         if (propuesta.estadoAcuerdo !== EstadoAceptacion.PROPUESTO) {
@@ -175,8 +210,9 @@ export class SolicitudesTecnicosService {
 
     /**
      * Obtiene propuestas por solicitud
+     * P2c: Valida que el usuario sea dueño de la solicitud o admin
      */
-    async findBySolicitud(idSolicitud: number) {
+    async findBySolicitud(idSolicitud: number, currentUser?: any) {
         // Verificar que la solicitud existe
         const solicitud = await this.database.solicitud.findUnique({
             where: { idSolicitud, isActive: true }
@@ -184,6 +220,16 @@ export class SolicitudesTecnicosService {
 
         if (!solicitud) {
             throw new NotFoundException(`Solicitud con ID ${idSolicitud} no encontrada`);
+        }
+
+        // P2c: Validar que solo cliente dueño o admin puede ver propuestas de esta solicitud
+        if (currentUser) {
+            const roles = this.normalizeRoles(currentUser);
+            const isAdmin = roles.includes('ADMIN');
+            
+            if (!isAdmin && solicitud.idUser !== currentUser.idUser) {
+                throw new ForbiddenException('No tienes permisos para ver propuestas de esta solicitud');
+            }
         }
 
         return this.database.solicitudTecnico.findMany({

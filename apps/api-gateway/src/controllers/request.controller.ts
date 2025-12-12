@@ -71,8 +71,8 @@ export class RequestController {
      */
     @Get('solicitudes/:id')
     @UseGuards(JwtAuthGuard)
-    findOneSolicitud(@Param('id', ParseIntPipe) id: number): Observable<any> {
-        return this.requestProxyService.findSolicitudById(id);
+    findOneSolicitud(@Param('id', ParseIntPipe) id: number, @Request() req: any): Observable<any> {
+        return this.requestProxyService.findSolicitudById(id, req.user);
     }
 
     /**
@@ -167,8 +167,8 @@ export class RequestController {
      */
     @Get('solicitudes-tecnicos/:id')
     @UseGuards(JwtAuthGuard)
-    findOneSolicitudTecnico(@Param('id', ParseIntPipe) id: number): Observable<any> {
-        return this.requestProxyService.findSolicitudTecnicoById(id);
+    findOneSolicitudTecnico(@Param('id', ParseIntPipe) id: number, @Request() req: any): Observable<any> {
+        return this.requestProxyService.findSolicitudTecnicoById(id, req.user);
     }
 
     /**
@@ -176,8 +176,8 @@ export class RequestController {
      */
     @Get('solicitudes-tecnicos/solicitud/:idSolicitud')
     @UseGuards(JwtAuthGuard)
-    findSolicitudesTecnicosBySolicitud(@Param('idSolicitud', ParseIntPipe) idSolicitud: number): Observable<any> {
-        return this.requestProxyService.findSolicitudesBySolicitud(idSolicitud);
+    findSolicitudesTecnicosBySolicitud(@Param('idSolicitud', ParseIntPipe) idSolicitud: number, @Request() req: any): Observable<any> {
+        return this.requestProxyService.findSolicitudesBySolicitud(idSolicitud, req.user);
     }
 
     /**

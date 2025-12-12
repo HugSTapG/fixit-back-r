@@ -32,13 +32,29 @@ export class SolicitudesTecnicosController {
     }
 
     @MessagePattern(REQUEST_PATTERNS.FIND_SOLICITUD_TECNICO_BY_ID)
-    async findOne(@Payload() data: { idSolTec: number }) {
+    async findOne(@Payload() data: { idSolTec: number; currentUser?: any }) {
         try {
             this.logger.log(`Getting solicitud-tecnico: ${data.idSolTec}`);
-            const result = await this.solicitudesTecnicosService.findOne(data.idSolTec);
+            const result = await this.solicitudesTecnicosService.findOne(data.idSolTec, data.currentUser);
             return { success: true, data: result };
         } catch (error) {
             this.logger.error(`Error getting solicitud-tecnico: ${data.idSolTec}`, error.stack);
+            return {
+                success: false,
+                error: error.message,
+                statusCode: error.status || 500
+            };
+        }
+    }
+
+    @MessagePattern(REQUEST_PATTERNS.FIND_SOLICITUDES_BY_SOLICITUD)
+    async findBySolicitud(@Payload() data: { idSolicitud: number; currentUser?: any }) {
+        try {
+            this.logger.log(`Getting solicitudes-tecnicos for solicitud: ${data.idSolicitud}`);
+            const result = await this.solicitudesTecnicosService.findBySolicitud(data.idSolicitud, data.currentUser);
+            return { success: true, data: result };
+        } catch (error) {
+            this.logger.error(`Error getting solicitudes-tecnicos for solicitud: ${data.idSolicitud}`, error.stack);
             return {
                 success: false,
                 error: error.message,

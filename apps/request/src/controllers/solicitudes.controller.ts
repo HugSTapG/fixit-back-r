@@ -27,10 +27,10 @@ export class SolicitudesController {
     }
 
     @MessagePattern(REQUEST_PATTERNS.FIND_SOLICITUD_BY_ID)
-    async findOne(@Payload() data: { idSolicitud: number }) {
+    async findOne(@Payload() data: { idSolicitud: number; currentUser?: any }) {
         try {
             this.logger.log(`Getting solicitud: ${data.idSolicitud}`);
-            const solicitud = await this.solicitudesService.findOne(data.idSolicitud);
+            const solicitud = await this.solicitudesService.findOne(data.idSolicitud, data.currentUser);
             return { success: true, data: solicitud };
         } catch (error) {
             this.logger.error(`Error getting solicitud: ${data.idSolicitud}`, error.stack);
