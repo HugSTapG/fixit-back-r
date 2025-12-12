@@ -333,44 +333,37 @@ export class SolicitudesService {
     /**
      * 🔑 MÉTODO CLAVE: Obtiene solicitudes disponibles para un técnico
      * 
-     * MVP DEFINITION:
-     * Una solicitud es visible para técnicos si:
-     *   ✅ estadoSolicitud = PENDIENTE
-     *   ✅ idTecnicoAsignado IS NULL (no tiene técnico asignado)
+     * MVP DEFINITION (STRICT - SIN EXCEPCIONES):
+     * Una solicitud es disponible SI Y SOLO SI:
+     *   ✅ estadoSolicitud = 'PENDIENTE'
+     *   ✅ idTecnicoAsignado IS NULL
      *   ✅ isActive = true
      * 
      * NO FILTRAR POR:
-     *   ❌ SolicitudTecnico (no importa si tiene propuestas)
+     *   ❌ idTipoServicio
+     *   ❌ codigoParroquia
+     *   ❌ currentUser
+     *   ❌ SolicitudTecnico (propuestas no afectan visibilidad)
      *   ❌ idTecnico (no excluir propias propuestas)
      * 
-     * BASADO EN: Uber/InDriver model - técnicos ven todas las solicitudes sin asignar
+     * BASADO EN: Uber/InDriver - todos los técnicos ven todas las solicitudes sin asignar
      */
-    async findAvailableForTechnicians(filterDto?: {
-        idTipoServicio?: number;
-        codigoParroquia?: string;
-        limit?: number;
-        page?: number;
-    }) {
-        const { idTipoServicio, codigoParroquia, limit = 20, page = 1 } = filterDto || {};
-
-        // WHERE: Solo solicitudes PENDIENTE sin técnico asignado
-        const where: any = {
-            isActive: true,
-            estadoSolicitud: EstadoSolicitud.PENDIENTE,
-            idTecnicoAsignado: null,  // 🔑 CRÍTICO: Solo sin asignar
-        };
-
-        if (idTipoServicio) {
-            where.idTipoServicio = idTipoServicio;
-        }
-        if (codigoParroquia) {
-            where.codigoParroquia = codigoParroquia;
-        }
-
-        const sanitizedLimit = Math.max(limit, 1);
-        const sanitizedPage = Math.max(page, 1);
+    async findAvailableForTechnicians(filterDto?: { limit?: number; page?: number }) {
+        const { limit = 20, page = 1 } = filterDto || {};
+        
+        // Validar inputs
+        const sanitizedLimit = Math.min(Math.max(1, limit), 100);
+        const sanitizedPage = Math.max(1, page);
         const skip = (sanitizedPage - 1) * sanitizedLimit;
-
+        
+        // MVP WHERE CLAUSE: 3 condiciones, sin más
+        const where = {
+            estadoSolicitud: EstadoSolicitud.PENDIENTE,
+            idTecnicoAsignado: null,
+            isActive: true,
+        };
+        
+        // Ejecutar en paralelo
         const [solicitudes, total] = await Promise.all([
             this.database.solicitud.findMany({
                 where,
@@ -386,31 +379,25 @@ export class SolicitudesService {
                     promocion: true,
                     estadoSolicitud: true,
                     fechaProgramada: true,
-                    duracionEstimadaMin: true,
                     fechaPublicacion: true,
-                    _count: {
-                        select: {
-                            solicitudesTecnico: true,
-                        }
-                    }
+                    duracionEstimadaMin: true,
                 },
-                orderBy: {
-                    fechaPublicacion: 'desc'
-                },
+                orderBy: { fechaPublicacion: 'desc' },
                 take: sanitizedLimit,
-                skip
+                skip,
             }),
-            this.database.solicitud.count({ where })
+            this.database.solicitud.count({ where }),
         ]);
-
+        
         return {
             solicitudes,
             pagination: {
                 total,
                 page: sanitizedPage,
                 limit: sanitizedLimit,
-                totalPages: Math.ceil(total / sanitizedLimit)
-            }
+                pages: Math.ceil(total / sanitizedLimit),
+                hasMore: skip + sanitizedLimit < total,
+            },
         };
     }
 }

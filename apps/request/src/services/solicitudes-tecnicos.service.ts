@@ -34,11 +34,12 @@ export class SolicitudesTecnicosService {
     private async getIdTecnicoFromCurrentUser(currentUser: any): Promise<number | null> {
         if (currentUser.idTecnico) return currentUser.idTecnico;
         
-        const tecnico = await this.database.tecnico.findFirst({
-            where: { idUser: currentUser.idUser }
-        });
+        // TODO: Buscar tecnico en microservicio technician, no en request
+        // const tecnico = await this.database.tecnico.findFirst({
+        //     where: { idUser: currentUser.idUser }
+        // });
         
-        return tecnico?.idTecnico || null;
+        return null;
     }
 
     /**

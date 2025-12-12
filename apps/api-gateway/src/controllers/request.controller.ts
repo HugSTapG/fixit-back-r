@@ -12,7 +12,8 @@ import {
     ParseIntPipe,
     HttpCode,
     BadRequestException,
-    DefaultValuePipe
+    DefaultValuePipe,
+    Header
 } from '@nestjs/common';
 import { Observable, switchMap, throwError } from 'rxjs';
 import { Public, Roles, RolUsuario, EstadoSolicitud } from '@app/shared';
@@ -106,6 +107,9 @@ export class RequestController {
     @Get('solicitudes/available/technicians')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(RolUsuario.TECNICO)
+    @Header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    @Header('Pragma', 'no-cache')
+    @Header('Expires', '0')
     findAvailableForTechnicians(
         @Request() req: any,
         @Query() filterDto: any
