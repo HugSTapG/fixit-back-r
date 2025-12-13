@@ -304,6 +304,52 @@ export class TecnicosService {
     }
 
     /**
+     * Actualiza el estado de un técnico (solo ADMIN)
+     */
+    async updateStatus(
+        idTecnico: number,
+        status: string,
+        currentUser: { idUser: number; roles: RolUsuario[] }
+    ) {
+        // Solo admin puede cambiar estados
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
+            throw new ForbiddenException('Solo los administradores pueden cambiar el estado de técnicos');
+        }
+
+        const tecnico = await this.findOne(idTecnico);
+
+        // Validar que el estado sea válido
+        const validStatuses = ['REGISTRADO', 'VERIFICACION_PENDIENTE', 'VERIFICADO', 'BLOQUEADO'];
+        if (!validStatuses.includes(status)) {
+            throw new ForbiddenException(`Estado inválido. Debe ser uno de: ${validStatuses.join(', ')}`);
+        }
+
+        const tecnicoActualizado = await this.database.tecnico.update({
+            where: { idTecnico },
+            data: {
+                status: status as any,
+                updatedBy: currentUser.idUser
+            },
+            include: {
+                certificaciones: true,
+                parroquias: true,
+                servicios: true
+            }
+        });
+
+        // Emitir evento
+        await this.kafkaService.publishEvent('technician.status.changed', {
+            idTecnico,
+            oldStatus: tecnico.status,
+            newStatus: status,
+            changedBy: currentUser.idUser,
+            timestamp: new Date(),
+        });
+
+        return TecnicoMapper.toInterface(tecnicoActualizado);
+    }
+
+    /**
      * Obtiene técnicos por parroquia
      */
     async findByParroquia(codigoParroquia: string, filterDto?: TecnicoFilterDto) {

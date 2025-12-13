@@ -149,6 +149,21 @@ export class TechnicianController {
     );
   }
 
+  @Patch('tecnicos/:idTecnico/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolUsuario.ADMIN)
+  updateTechnicianStatus(
+    @Param('idTecnico', ParseIntPipe) idTecnico: number,
+    @Body() body: { status: string },
+    @Request() req: any,
+  ): Observable<any> {
+    return this.technicianProxyService.updateTechnicianStatus(
+      idTecnico,
+      body.status,
+      req.user,
+    );
+  }
+
   // ========================================================================
   // === CERTIFICACIONES ===
   // ========================================================================
@@ -519,6 +534,13 @@ export class TechnicianController {
   }
 
   // === CALIFICACIONES ===
+  @Get('calificaciones')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolUsuario.ADMIN)
+  getAllCalificaciones(@Query() filterDto: any): Observable<any> {
+    return this.technicianProxyService.findAllCalificaciones(filterDto);
+  }
+
   @Post('calificaciones')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RolUsuario.ADMIN, RolUsuario.CLIENTE)
@@ -543,6 +565,19 @@ export class TechnicianController {
     return this.technicianProxyService.updateCalificacion(
       idCalificacion,
       updateCalificacionDto,
+      req.user,
+    );
+  }
+
+  @Delete('calificaciones/:idCalificacion')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RolUsuario.ADMIN)
+  deleteCalificacion(
+    @Param('idCalificacion', ParseIntPipe) idCalificacion: number,
+    @Request() req: any,
+  ): Observable<any> {
+    return this.technicianProxyService.deleteCalificacion(
+      idCalificacion,
       req.user,
     );
   }

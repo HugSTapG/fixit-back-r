@@ -5,6 +5,7 @@ export const TECHNICIAN_PATTERNS = {
     FIND_ALL_TECHNICIANS: 'technician.tecnico.findAll',
     CREATE_TECHNICIAN: 'technician.tecnico.create',
     UPDATE_TECHNICIAN: 'technician.tecnico.update',
+    UPDATE_TECHNICIAN_STATUS: 'technician.tecnico.updateStatus',
     DEACTIVATE_TECHNICIAN: 'technician.tecnico.deactivate',
     SUBMIT_VERIFICATION: 'technician.tecnico.submitVerification',
     APPROVE_VERIFICATION: 'technician.tecnico.approveVerification',
@@ -63,8 +64,10 @@ export const TECHNICIAN_PATTERNS = {
     FIND_TECNICOS_BY_SERVICIO: 'technician.tecnicoServicio.findByTipoServicio',
 
     // Calificaciones
+    FIND_ALL_CALIFICACIONES: 'technician.calificacion.findAll',
     CREATE_CALIFICACION: 'technician.calificacion.create',
     UPDATE_CALIFICACION: 'technician.calificacion.update',
+    DELETE_CALIFICACION: 'technician.calificacion.delete',
     FIND_CALIFICACIONES_BY_TECNICO: 'technician.calificacion.findByTecnico',
     UPDATE_PROMEDIO_CALIFICACIONES: 'technician.calificacion.updatePromedio',
 } as const;

@@ -10,6 +10,22 @@ export class CalificacionesController {
 
     constructor(private readonly calificacionesService: CalificacionesService) { }
 
+    @MessagePattern(TECHNICIAN_PATTERNS.FIND_ALL_CALIFICACIONES)
+    async findAll(@Payload() filterDto?: any) {
+        try {
+            this.logger.log('Getting all calificaciones');
+            const result = await this.calificacionesService.findAll(filterDto);
+            return { success: true, data: result };
+        } catch (error) {
+            this.logger.error('Error getting all calificaciones', error.stack);
+            return {
+                success: false,
+                error: error.message,
+                statusCode: error.status || 500
+            };
+        }
+    }
+
     @MessagePattern(TECHNICIAN_PATTERNS.CREATE_CALIFICACION)
     async create(@Payload() data: { createCalificacionDto: CreateCalificacionDto; currentUser: any }) {
         try {
@@ -40,6 +56,23 @@ export class CalificacionesController {
             return { success: true, data: calificacion };
         } catch (error) {
             this.logger.error(`Error updating calificacion: ${data.idCalificacion}`, error.stack);
+            return {
+                success: false,
+                error: error.message,
+                statusCode: error.status || 500
+            };
+        }
+    }
+
+    @MessagePattern(TECHNICIAN_PATTERNS.DELETE_CALIFICACION)
+    async delete(@Payload() data: { idCalificacion: number; currentUser: any }) {
+        try {
+            const { idCalificacion, currentUser } = data;
+            this.logger.log(`Deleting calificacion: ${idCalificacion}`);
+            const result = await this.calificacionesService.delete(idCalificacion, currentUser);
+            return { success: true, data: result };
+        } catch (error) {
+            this.logger.error(`Error deleting calificacion: ${data.idCalificacion}`, error.stack);
             return {
                 success: false,
                 error: error.message,

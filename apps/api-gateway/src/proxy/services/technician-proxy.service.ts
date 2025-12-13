@@ -32,6 +32,10 @@ export class TechnicianProxyService extends MicroserviceProxyService {
         return this.sendToTechnician(TECHNICIAN_PATTERNS.DEACTIVATE_TECHNICIAN, { idTecnico, currentUser });
     }
 
+    updateTechnicianStatus(idTecnico: number, status: string, currentUser: any): Observable<any> {
+        return this.sendToTechnician(TECHNICIAN_PATTERNS.UPDATE_TECHNICIAN_STATUS, { idTecnico, status, currentUser });
+    }
+
     findTechniciansByParroquia(codigoParroquia: string, filterDto?: any): Observable<any> {
         return this.sendToTechnician(TECHNICIAN_PATTERNS.FIND_TECHNICIANS_BY_PARROQUIA, { codigoParroquia, filterDto });
     }
@@ -194,12 +198,20 @@ export class TechnicianProxyService extends MicroserviceProxyService {
     }
 
     // === CALIFICACIONES ===
+    findAllCalificaciones(filterDto?: any): Observable<any> {
+        return this.sendToTechnician(TECHNICIAN_PATTERNS.FIND_ALL_CALIFICACIONES, filterDto || {});
+    }
+
     createCalificacion(createCalificacionDto: any, currentUser: any): Observable<any> {
         return this.sendToTechnician(TECHNICIAN_PATTERNS.CREATE_CALIFICACION, { createCalificacionDto, currentUser });
     }
 
     updateCalificacion(idCalificacion: number, updateCalificacionDto: any, currentUser: any): Observable<any> {
         return this.sendToTechnician(TECHNICIAN_PATTERNS.UPDATE_CALIFICACION, { idCalificacion, updateCalificacionDto, currentUser });
+    }
+
+    deleteCalificacion(idCalificacion: number, currentUser: any): Observable<any> {
+        return this.sendToTechnician(TECHNICIAN_PATTERNS.DELETE_CALIFICACION, { idCalificacion, currentUser });
     }
 
     findCalificacionesByTecnico(idTecnico: number): Observable<any> {

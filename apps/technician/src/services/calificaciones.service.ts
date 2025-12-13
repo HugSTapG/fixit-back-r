@@ -145,6 +145,55 @@ export class CalificacionesService {
     }
 
     /**
+     * Obtiene todas las calificaciones (solo ADMIN)
+     */
+    async findAll(filterDto?: any) {
+        const {
+            limit = 20,
+            page = 1,
+            idTecnico,
+            puntaje
+        } = filterDto || {};
+
+        const parsedLimit = Number(limit) || 20;
+        const parsedPage = Number(page) || 1;
+        const skip = (parsedPage - 1) * parsedLimit;
+
+        const where: any = {};
+
+        if (idTecnico) {
+            where.idTecnico = Number(idTecnico);
+        }
+
+        if (puntaje) {
+            where.puntaje = puntaje;
+        }
+
+        const [calificaciones, total] = await Promise.all([
+            this.database.calificacion.findMany({
+                where,
+                orderBy: { fechaCalificacion: 'desc' },
+                take: parsedLimit,
+                skip,
+                include: {
+                    tecnico: true
+                }
+            }),
+            this.database.calificacion.count({ where })
+        ]);
+
+        return {
+            calificaciones: calificaciones.map(c => CalificacionMapper.toInterface(c)),
+            pagination: {
+                total,
+                page: parsedPage,
+                limit: parsedLimit,
+                totalPages: Math.ceil(total / parsedLimit)
+            }
+        };
+    }
+
+    /**
      * Obtiene calificaciones por técnico
      */
     async findByTecnico(idTecnico: number, filterDto?: any) {
@@ -178,6 +227,46 @@ export class CalificacionesService {
                 totalPages: Math.ceil(total / parsedLimit)
             }
         };
+    }
+
+    /**
+     * Elimina una calificación (solo ADMIN)
+     */
+    async delete(
+        idCalificacion: number,
+        currentUser: { idUser: number; roles: RolUsuario[] }
+    ) {
+        // Verificar que es admin
+        if (!currentUser.roles.includes(RolUsuario.ADMIN)) {
+            throw new BadRequestException('Solo los administradores pueden eliminar calificaciones');
+        }
+
+        const calificacion = await this.database.calificacion.findUnique({
+            where: { idCalificacion }
+        });
+
+        if (!calificacion) {
+            throw new NotFoundException(`Calificación con ID ${idCalificacion} no encontrada`);
+        }
+
+        return this.database.$transaction(async (prisma) => {
+            // Eliminar la calificación
+            await prisma.calificacion.delete({
+                where: { idCalificacion }
+            });
+
+            // Actualizar estadísticas del técnico
+            await this.actualizarEstadisticasTecnico(prisma, calificacion.idTecnico);
+
+            // Emitir evento
+            await this.kafkaService.publishEvent('technician.calificacion.deleted', {
+                idCalificacion,
+                idTecnico: calificacion.idTecnico,
+                timestamp: new Date(),
+            });
+
+            return { message: 'Calificación eliminada exitosamente' };
+        });
     }
 
     /**

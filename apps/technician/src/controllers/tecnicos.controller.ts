@@ -118,6 +118,37 @@ export class TecnicosController {
     }
   }
 
+  @MessagePattern(TECHNICIAN_PATTERNS.UPDATE_TECHNICIAN_STATUS)
+  async updateStatus(
+    @Payload()
+    data: {
+      idTecnico: number;
+      status: string;
+      currentUser: any;
+    },
+  ) {
+    try {
+      const { idTecnico, status, currentUser } = data;
+      this.logger.log(`Updating technician status: ${idTecnico} to ${status}`);
+      const tecnico = await this.tecnicosService.updateStatus(
+        idTecnico,
+        status,
+        currentUser,
+      );
+      return { success: true, data: tecnico };
+    } catch (error) {
+      this.logger.error(
+        `Error updating technician status: ${data.idTecnico}`,
+        error.stack,
+      );
+      return {
+        success: false,
+        error: error.message,
+        statusCode: error.status || 500,
+      };
+    }
+  }
+
   @MessagePattern(TECHNICIAN_PATTERNS.DEACTIVATE_TECHNICIAN)
   async deactivate(@Payload() data: { idTecnico: number; currentUser: any }) {
     try {
