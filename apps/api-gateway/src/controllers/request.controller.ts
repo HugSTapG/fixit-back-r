@@ -1,24 +1,24 @@
+import { Public, Roles, RolUsuario } from '@app/shared';
 import {
-    Controller,
-    Get,
-    Post,
+    BadRequestException,
     Body,
-    Param,
-    Put,
+    Controller,
     Delete,
-    Query,
-    UseGuards,
-    Request,
-    ParseIntPipe,
+    Get,
     HttpCode,
-    BadRequestException
+    Param,
+    ParseIntPipe,
+    Post,
+    Put,
+    Query,
+    Request,
+    UseGuards
 } from '@nestjs/common';
 import { Observable, switchMap, throwError } from 'rxjs';
-import { Public, Roles, RolUsuario } from '@app/shared';
-import { RequestProxyService } from '../proxy/services/request-proxy.service';
-import { TechnicianProxyService } from '../proxy/services/technician-proxy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { RequestProxyService } from '../proxy/services/request-proxy.service';
+import { TechnicianProxyService } from '../proxy/services/technician-proxy.service';
 
 /**
  * Controlador unificado del API Gateway para el Request Service
@@ -172,7 +172,7 @@ export class RequestController {
      */
     @Get('solicitudes-tecnicos/my/propuestas')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(RolUsuario.TECNICO)
+    @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO)
     findMyProposals(@Request() req: any): Observable<any> {
         return this.technicianProxyService.findTechnicianByUserId(req.user.idUser).pipe(
             switchMap(technicianResponse => {
@@ -189,7 +189,7 @@ export class RequestController {
      */
     @Get('solicitudes-tecnicos/my/stats')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(RolUsuario.TECNICO)
+    @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO)
     getMyTechnicianStats(@Request() req: any): Observable<any> {
         return this.technicianProxyService.findTechnicianByUserId(req.user.idUser).pipe(
             switchMap(technicianResponse => {
@@ -206,7 +206,7 @@ export class RequestController {
      */
     @Post('solicitudes-tecnicos/postularse')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(RolUsuario.TECNICO)
+    @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO)
     postularse(
         @Body() createDto: any,
         @Request() req: any
@@ -241,7 +241,7 @@ export class RequestController {
      */
     @Put('solicitudes-tecnicos/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(RolUsuario.TECNICO)
+    @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO)
     updateSolicitudTecnico(
         @Param('id', ParseIntPipe) id: number,
         @Body() updateDto: any,
@@ -262,7 +262,7 @@ export class RequestController {
      */
     @Delete('solicitudes-tecnicos/:id')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(RolUsuario.TECNICO)
+    @Roles(RolUsuario.ADMIN, RolUsuario.TECNICO)
     cancelarSolicitudTecnico(
         @Param('id', ParseIntPipe) id: number,
         @Request() req: any

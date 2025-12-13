@@ -1,30 +1,33 @@
-import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { TerminusModule } from '@nestjs/terminus';
 import { JwtModule } from '@nestjs/jwt';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
+import { TerminusModule } from '@nestjs/terminus';
 
 // Shared libraries
-import { SharedModule } from '@app/shared';
 import { EventsModule, KafkaModule, RedisModule } from '@app/events';
+import { SharedModule } from '@app/shared';
 
 // Local modules and services
-import { ProxyModule } from './proxy/proxy.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
+import { ProxyModule } from './proxy/proxy.module';
 
 // Controllers
 import { AuthController } from './controllers/auth.controller';
 import { GeoController } from './controllers/geo.controller';
-import { HealthController } from './health/health.controller';
-import { UsuariosController } from './controllers/usuarios.controller';
-import { TechnicianController } from './controllers/technician.controller';
-import { RequestController } from './controllers/request.controller';
-import { PaymentController } from './controllers/payment.controller';
 import { NotificationController } from './controllers/notification.controller';
+import { PaymentController } from './controllers/payment.controller';
+import { RequestController } from './controllers/request.controller';
+import { TechnicianController } from './controllers/technician.controller';
+import { UsuariosController } from './controllers/usuarios.controller';
+import { HealthController } from './health/health.controller';
+
+// ✅ LLM Controller
+import { LlmController } from './controllers/llm.controller';
 
 // Middleware
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware';
@@ -32,13 +35,17 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
 
 @Module({
   imports: [
+    // =========================
     // Configuration
+    // =========================
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
 
+    // =========================
     // Authentication
+    // =========================
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -51,16 +58,22 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
       inject: [ConfigService],
     }),
 
+    // =========================
     // Shared libraries
+    // =========================
     SharedModule,
     EventsModule,
     KafkaModule,
     RedisModule,
 
+    // =========================
     // Health checks
+    // =========================
     TerminusModule,
 
+    // =========================
     // Microservices clients
+    // =========================
     ClientsModule.registerAsync([
       {
         name: 'AUTH_SERVICE',
@@ -129,43 +142,48 @@ import { LoggingMiddleware } from './middleware/logging.middleware';
         inject: [ConfigService],
       },
     ]),
+
+    // =========================
+    // Proxy module (HTTP → MS)
+    // =========================
     ProxyModule,
   ],
+
+  // =========================
+  // Controllers
+  // =========================
   controllers: [
-    // Auth controllers
     AuthController,
     UsuariosController,
-
-    // Geo controllers
     GeoController,
-
-    // Technician controller
     TechnicianController,
-
-    // Request controller
     RequestController,
-
-    // Payment controller
     PaymentController,
-
-    // Notification controller
     NotificationController,
 
-    // Health controller
+    // ✅ LLM endpoint registered here
+    LlmController,
+
     HealthController,
   ],
+
+  // =========================
+  // Providers / Guards
+  // =========================
   providers: [
     JwtStrategy,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
-    }
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class ApiModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(CorrelationIdMiddleware, LoggingMiddleware)
-      .forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, LoggingMiddleware).forRoutes('*');
   }
 }
