@@ -95,6 +95,13 @@ export class MaestritoService implements OnModuleInit, OnModuleDestroy {
             isActive: true,
             partialSolicitudData: {},
             failedAttempts: 0,
+            awaitingConfirmation: false,
+            pendingSolicitudData: null,
+            lastSummaryMessage: null,
+            pendingField: 'SERVICE_TYPE',
+            completedFields: [],
+            skippedOptionalFields: [],
+            lastUserWasUncertain: false,
         };
 
         this.sessions.set(sessionId, session);
