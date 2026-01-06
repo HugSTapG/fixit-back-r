@@ -22,7 +22,6 @@ model Usuario {
   nombres         String
   apellidos       String
   email           String   @unique
-  password        String   // Campo original (mantenemos por compatibilidad)
   passwordHash    String?  // Campo para hash de password
   telefono        String?
   direccion       String?
